@@ -475,3 +475,457 @@ body::after {
     gap: 16px;
   }
 }
+
+/* ==========================================================================
+   SELECT TEMPLATE GALLERY STYLES
+   ========================================================================== */
+
+:root {
+  --gallery-bg: #FDF6F0; /* Soft creamy off-white */
+  --gallery-text: #4A2E2A; /* Warm charcoal / deep maroon */
+  --gallery-text-muted: #826561;
+  --gallery-shadow: rgba(74, 46, 42, 0.05);
+  --gallery-glow: rgba(231, 127, 103, 0.15);
+  --gallery-border: rgba(74, 46, 42, 0.08);
+  --gallery-border-hover: rgba(231, 127, 103, 0.35);
+}
+
+.gallery-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  position: relative;
+  min-height: 90vh;
+}
+
+/* Override background colors and text for gallery wrapper scope */
+.gallery-wrapper ~ body,
+body:has(.gallery-wrapper) {
+  background-color: var(--gallery-bg) !important;
+  color: var(--gallery-text) !important;
+}
+
+/* Ambient Floating Background Blobs */
+.ambient-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -2;
+}
+
+.ambient-blob {
+  position: absolute;
+  width: 45vw;
+  height: 45vw;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.3;
+  animation: floatAmbient 25s infinite alternate ease-in-out;
+}
+
+.ambient-yellow {
+  background: #f7d794;
+  top: -10%;
+  left: -10%;
+}
+
+.ambient-red {
+  background: #f8a5c2;
+  bottom: -15%;
+  right: -10%;
+  animation-delay: -12s;
+}
+
+@keyframes floatAmbient {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8%, 10%) scale(1.15); }
+  100% { transform: translate(-5%, -5%) scale(0.95); }
+}
+
+/* Header Entrance Animations */
+.gallery-header {
+  margin-bottom: 48px;
+  opacity: 0;
+  transform: translateY(-15px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gallery-header.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.gallery-title {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 600;
+  color: var(--gallery-text);
+  margin-bottom: 12px;
+}
+
+.gallery-subtitle {
+  color: var(--gallery-text-muted);
+  font-size: 16px;
+  font-weight: 500;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+/* Staggered Grid Setup */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.gallery-grid.in-view {
+  opacity: 1;
+}
+
+.gallery-item {
+  opacity: 0;
+  transform: translateY(25px);
+}
+
+.gallery-grid.in-view .gallery-item {
+  animation: slideUpStagger 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpStagger {
+  0% {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card Visuals (16:9 ratio) */
+.template-card {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--gallery-border);
+  box-shadow: 0 12px 30px var(--gallery-shadow);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.template-card:hover {
+  transform: scale(1.035);
+  box-shadow: 0 20px 40px var(--gallery-shadow), 0 0 20px var(--gallery-glow);
+  border-color: var(--gallery-border-hover);
+}
+
+/* Glass panel filter overlay for card graphics */
+.card-glass-tint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(74, 46, 42, 0.03) 100%);
+  pointer-events: none;
+}
+
+/* Card Labels & Subtexts */
+.template-info {
+  margin-top: 14px;
+}
+
+.template-label {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gallery-text);
+  margin-bottom: 4px;
+  transition: color 0.25s ease;
+}
+
+.gallery-item:hover .template-label {
+  color: var(--pastel-red);
+}
+
+.template-subtext {
+  font-size: 13px;
+  color: var(--gallery-text-muted);
+  line-height: 1.4;
+}
+
+/* Pill Badge Tags */
+.card-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(74, 46, 42, 0.08);
+  color: var(--gallery-text);
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+}
+
+.template-card.selected {
+  border: 2.5px solid var(--pastel-red);
+  box-shadow: 0 15px 35px var(--gallery-shadow), 0 0 25px var(--gallery-glow);
+  transform: scale(1.015);
+}
+
+.card-selected-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--pastel-red);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+  box-shadow: var(--shadow-md);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   PROCEDURAL CARD THEMING (CSS / SVG)
+   ========================================================================== */
+
+/* Theme 1: Sunset Glow */
+.card-coral-peach {
+  background: linear-gradient(135deg, #f8a5c2 0%, #f7d794 100%);
+}
+
+/* Theme 2: Soft Butter Dots */
+.card-butter-dots {
+  background: #fdfaf2;
+}
+
+.blob-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(24px);
+  opacity: 0.7;
+  animation: floatDots 10s infinite alternate ease-in-out;
+}
+
+.blob-one {
+  width: 80px;
+  height: 80px;
+  background: #f7d794;
+  top: 10%;
+  left: 15%;
+}
+
+.blob-two {
+  width: 90px;
+  height: 90px;
+  background: #ff7f50;
+  bottom: 10%;
+  right: 15%;
+  animation-delay: -5s;
+}
+
+@keyframes floatDots {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(15px, 15px) scale(1.1); }
+}
+
+/* Theme 3: Rose Grain (tactile noise overlay) */
+.card-rose-grain {
+  background: #e77f67;
+}
+
+.card-noise::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  filter: url(#grainyNoise);
+  opacity: 0.35;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Theme 4: Sunset Slope */
+.card-sunset-slope {
+  background: linear-gradient(135deg, #ea8685 0%, #f19066 50%, #f7d794 100%);
+}
+
+/* Theme 5: Cream & Mustard grid style */
+.card-mustard-cream {
+  background: linear-gradient(135deg, #f7d794 0%, #fdf6f0 100%);
+}
+
+.card-mustard-cream::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(rgba(74, 46, 42, 0.04) 1px, transparent 1px), 
+                    linear-gradient(90deg, rgba(74, 46, 42, 0.04) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Theme 6: Mesh Gradient Aurora */
+.card-mesh-aurora {
+  background: 
+    radial-gradient(at 10% 20%, #f8a5c2 0px, transparent 50%), 
+    radial-gradient(at 90% 10%, #f7d794 0px, transparent 50%), 
+    radial-gradient(at 50% 80%, #ff7f50 0px, transparent 50%), 
+    #fdf6f0;
+}
+
+/* Theme 7: Salmon Flow */
+.card-salmon-flow {
+  background: #ff7f50;
+  overflow: hidden;
+}
+
+.flow-lines {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.15;
+  background-image: radial-gradient(circle, #fdf6f0 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.circle-orb {
+  position: absolute;
+  top: 25%;
+  left: 35%;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #f7d794;
+  filter: blur(15px);
+  opacity: 0.6;
+  animation: floatOrb 8s infinite alternate ease-in-out;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -10px) scale(1.2); }
+}
+
+/* Theme 8: Shifting Pastel Gradient Drift */
+.card-shifting-drift {
+  background: linear-gradient(270deg, #f7d794, #f8a5c2, #ff7f50, #fdf6f0);
+  background-size: 600% 600%;
+  animation: shiftingGradient 12s ease infinite;
+}
+
+@keyframes shiftingGradient {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+/* ==========================================================================
+   DEVELOPER DEMO LAYOUT SWITCHER
+   ========================================================================== */
+.dev-navbar {
+  width: 100%;
+  background: rgba(74, 46, 42, 0.05);
+  border-bottom: 1px solid rgba(74, 46, 42, 0.08);
+  padding: 10px 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.dev-nav-btn {
+  padding: 8px 16px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.dev-nav-btn:hover {
+  color: var(--text-dark);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dev-nav-btn.active {
+  color: #ffffff;
+  background: var(--pastel-red);
+  box-shadow: 0 4px 10px rgba(220, 80, 80, 0.15);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN ADAPTATIONS
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  .gallery-title {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 600px) {
+  .gallery-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .gallery-wrapper {
+    padding: 32px 16px;
+  }
+  .gallery-title {
+    font-size: 28px;
+  }
+}
+

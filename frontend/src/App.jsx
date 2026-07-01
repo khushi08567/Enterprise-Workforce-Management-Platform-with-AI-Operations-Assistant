@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import SelectTemplate from './components/SelectTemplate';
 
 function App() {
+  const [devView, setDevView] = useState('gallery'); // 'gallery' or 'auth'
   const [view, setView] = useState('login'); // 'login', 'register', 'dashboard'
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,13 +34,11 @@ function App() {
           setUser(data.user);
           setView('dashboard');
         } else {
-          // Token is invalid/expired
           localStorage.removeItem('wfm_token');
           localStorage.removeItem('wfm_user');
         }
       } catch (err) {
         console.error('Session validation error:', err.message);
-        // On network error, we keep offline details or require relogin
       } finally {
         setLoading(false);
       }
@@ -90,25 +90,50 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      {view === 'login' && (
-        <Login 
-          onLoginSuccess={handleLoginSuccess} 
-          toggleView={() => setView('register')} 
-        />
-      )}
-      {view === 'register' && (
-        <Register 
-          onRegisterSuccess={handleRegisterSuccess} 
-          toggleView={() => setView('login')} 
-        />
-      )}
-      {view === 'dashboard' && user && (
-        <Dashboard 
-          user={user} 
-          onLogout={handleLogout} 
-        />
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh' }}>
+      {/* Dev preview toggle header */}
+      <nav className="dev-navbar">
+        <button 
+          className={`dev-nav-btn ${devView === 'gallery' ? 'active' : ''}`}
+          onClick={() => setDevView('gallery')}
+        >
+          🎨 Select Template Gallery
+        </button>
+        <button 
+          className={`dev-nav-btn ${devView === 'auth' ? 'active' : ''}`}
+          onClick={() => setDevView('auth')}
+        >
+          🔐 Full-Stack WFM Auth Demo
+        </button>
+      </nav>
+
+      {/* Main viewport area */}
+      <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        {devView === 'gallery' ? (
+          <SelectTemplate />
+        ) : (
+          <div className="app-container">
+            {view === 'login' && (
+              <Login 
+                onLoginSuccess={handleLoginSuccess} 
+                toggleView={() => setView('register')} 
+              />
+            )}
+            {view === 'register' && (
+              <Register 
+                onRegisterSuccess={handleRegisterSuccess} 
+                toggleView={() => setView('login')} 
+              />
+            )}
+            {view === 'dashboard' && user && (
+              <Dashboard 
+                user={user} 
+                onLogout={handleLogout} 
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
