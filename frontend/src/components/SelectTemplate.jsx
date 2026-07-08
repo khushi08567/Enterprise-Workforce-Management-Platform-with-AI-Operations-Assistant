@@ -1,4 +1,6 @@
-const SelectTemplate = () => {
+import React, { useEffect, useState } from 'react';
+
+const SelectTemplate = ({ onLaunchWorkspace }) => {
   const [animate, setAnimate] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -78,8 +80,13 @@ const SelectTemplate = () => {
     }
   ];
 
+  const getSelectedName = () => {
+    const found = templates.find(t => t.id === selectedId);
+    return found ? found.label : '';
+  };
+
   return (
-    <div className="gallery-wrapper">
+    <div className="gallery-wrapper" style={{ paddingBottom: selectedId ? '120px' : '48px' }}>
       {/* Dynamic Background Blur Blobs */}
       <div className="ambient-bg">
         <div className="ambient-blob ambient-yellow"></div>
@@ -120,6 +127,33 @@ const SelectTemplate = () => {
           </div>
         ))}
       </div>
+
+      {/* Floating Action Bar */}
+      {selectedId && (
+        <div className="gallery-action-bar">
+          <div className="action-bar-content">
+            <div className="action-info">
+              <span className="action-dot"></span>
+              <p className="action-text">
+                Selected: <strong>{getSelectedName()}</strong>
+              </p>
+            </div>
+            
+            {selectedId === 8 ? (
+              <button 
+                className="btn-primary action-btn animate-pulse"
+                onClick={() => onLaunchWorkspace && onLaunchWorkspace(8)}
+              >
+                🚀 Launch Workspace
+              </button>
+            ) : (
+              <button className="btn-secondary action-btn" style={{ opacity: 0.5, cursor: 'not-allowed' }} disabled>
+                Layout Only (No Workspace)
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* SVG Turbulence/Noise Filter - Hidden but referenced in CSS */}
       <svg style={{ display: 'none' }}>

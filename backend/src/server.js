@@ -3,6 +3,10 @@ import { db } from '#@/core/database';
 
 const PORT = process.env.PORT || 5000;
 
+if (process.env.NODE_ENV === 'production' && !process.env.CLOUDINARY_URL) {
+  console.warn('[Cloudinary Warning] Running in production but CLOUDINARY_URL is not configured in .env. Uploaded documents will be stored on the ephemeral local filesystem and will vanish on redeploys.');
+}
+
 const server = app.listen(PORT, () => {
   console.log(`Enterprise WFM backend server running on http://localhost:${PORT}`);
 });

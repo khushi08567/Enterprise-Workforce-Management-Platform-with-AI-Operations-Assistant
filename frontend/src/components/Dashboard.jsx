@@ -1,149 +1,2754 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Building2, 
+  Crown, 
+  LayoutDashboard, 
+  ClipboardList, 
+  Bell, 
+  Moon, 
+  Sun, 
+  MessageCircle, 
+  Lock, 
+  ChevronRight, 
+  ChevronDown, 
+  Copy, 
+  Search,
+  Shield,
+  Trash2,
+  Users,
+  TrendingUp,
+  Briefcase,
+  Clock,
+  Calendar,
+  DollarSign,
+  Award
+} from 'lucide-react';
+
+import OrganizationsTab from './org/OrganizationsTab';
+import EmployeesTab from './emp/EmployeesTab';
+import InsightsTab from './insights/InsightsTab';
+import RecruitmentTab from './recruitment/RecruitmentTab';
+import AttendanceTab from './attendance/AttendanceTab';
+import LeaveTab from './leave/LeaveTab';
+import PayrollTab from './payroll/PayrollTab';
+import PerformanceTab from './performance/PerformanceTab';
 
 const Dashboard = ({ user, onLogout }) => {
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'organizations', 'invites', 'roles', 'delegations', 'emailLogs'
+  const [organizations, setOrganizations] = useState([]);
+  const [invites, setInvites] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  // Day 3 & Day 4 Feature States
+  const [delegations, setDelegations] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  const [emailLogs, setEmailLogs] = useState([]);
+  const [delegateToId, setDelegateToId] = useState('');
+  const [delegateRole, setDelegateRole] = useState('Employee');
+  const [delegateStartDate, setDelegateStartDate] = useState('');
+  const [delegateEndDate, setDelegateEndDate] = useState('');
+
+  // Floating AI Assistant States
+  const [isAiOpen, setIsAiOpen] = useState(false);
+  const [aiInput, setAiInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const [aiMessages, setAiMessages] = useState([
+    { role: 'assistant', content: "Hello! I am your AI Operations Assistant. Ask me anything about users, roles, departments, or delegations!" }
+  ]);
   
-  // Custom badges for roles
+  // Form States (Organizations & Invites)
+  const [newOrgName, setNewOrgName] = useState('');
+  const [newOrgParentId, setNewOrgParentId] = useState('');
+  const [inviteRole, setInviteRole] = useState('Employee');
+  const [inviteOrg, setInviteOrg] = useState('Engineering');
+
+  // Employee creation form states
+  const [empName, setEmpName] = useState('');
+  const [empEmail, setEmpEmail] = useState('');
+  const [empPassword, setEmpPassword] = useState('');
+  const [empOrg, setEmpOrg] = useState('Engineering');
+  const [empRole, setEmpRole] = useState('Employee');
+
+  // Custom Role Builder Form States
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRoleLevel, setNewRoleLevel] = useState(10);
+  const [newRolePerms, setNewRolePerms] = useState(['org:read']);
+  const [editingRoleId, setEditingRoleId] = useState(null);
+  const [editRoleName, setEditRoleName] = useState('');
+  const [editRoleLevel, setEditRoleLevel] = useState(10);
+  const [editRolePerms, setEditRolePerms] = useState([]);
+
+  // Org Tree Enhancements States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [expandedNodes, setExpandedNodes] = useState({});
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Advanced Demo Features States
+  const [impersonatedRole, setImpersonatedRole] = useState(null);
+  const [isCmdOpen, setIsCmdOpen] = useState(false);
+  const [cmdQuery, setCmdQuery] = useState('');
+  const [cmdResults, setCmdResults] = useState([]);
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: 'Welcome to your Enterprise WFM Assistant.', read: false, time: 'Just now' },
+    { id: 2, text: 'Holiday calendar has been updated.', read: true, time: '1 hour ago' }
+  ]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [prefilledOnboarding, setPrefilledOnboarding] = useState(null);
+
+  const handlePrefillOnboarding = (candidateData) => {
+    setPrefilledOnboarding(candidateData);
+    setActiveTab('employees');
+  };
+
+  const activeUserRole = impersonatedRole || user.role;
+  const activeUser = { ...user, role: activeUserRole };
+
+  // 1. Dark Mode DOM side-effect
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  // 2. HTTP Interceptor for Impersonated Role Header injection
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (url, options = {}) => {
+      if (impersonatedRole) {
+        options.headers = {
+          ...options.headers,
+          'X-Impersonate-Role': impersonatedRole
+        };
+      }
+      return originalFetch(url, options);
+    };
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [impersonatedRole]);
+
+  // 3. Command Palette Keyboard Shortcut Listener (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCmdOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // 4. Simulated Real-Time System Notification dispatcher
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const alertLogs = [
+        'Onboarding credentials dispatched for Jane Developer.',
+        'High attrition risk score detected for Employee EMP1002.',
+        'Simulated separation exit checklist completed by HR.',
+        'Audit logs requested by administrator user.'
+      ];
+      const text = alertLogs[Math.floor(Math.random() * alertLogs.length)];
+      setNotifications(prev => [
+        { id: Date.now(), text, read: false, time: 'Just now' },
+        ...prev
+      ]);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleCmdSearch = (val) => {
+    setCmdQuery(val);
+    if (!val.trim()) {
+      setCmdResults([]);
+      return;
+    }
+    const commands = [
+      { label: 'Go to Overview Dashboard', tab: 'overview' },
+      { label: 'Go to Organization Management', tab: 'organizations' },
+      { label: 'Go to Onboarding Invites', tab: 'invites' },
+      { label: 'Go to System Access Roles', tab: 'roles' },
+      { label: 'Go to Temporary Delegations', tab: 'delegations' },
+      { label: 'Go to Simulated Email Logs', tab: 'emailLogs' },
+      { label: 'Go to Employees Directory', tab: 'employees' },
+      { label: 'Go to Workforce Analytics Insights', tab: 'insights' },
+      { label: 'Go to Audit Compliance log', tab: 'auditLogs' },
+      { label: 'Go to Recruitment Candidate Board', tab: 'recruitment' },
+      { label: 'Go to Attendance Clock In/Out', tab: 'attendance' },
+      { label: 'Go to Leave Balance & Apply Requests', tab: 'leave' },
+      { label: 'Go to Payroll Payslip Statements', tab: 'payroll' },
+      { label: 'Go to Performance Quarters Goals', tab: 'performance' }
+    ];
+    setCmdResults(commands.filter(c => c.label.toLowerCase().includes(val.toLowerCase())));
+  };
+
+  // Initialize expansion state and default selected node
+  useEffect(() => {
+    if (organizations.length > 0) {
+      const initialExpanded = {};
+      const exceedsLimit = organizations.length > 10;
+      organizations.forEach(org => {
+        if (org.parent_id === null) {
+          initialExpanded[org.id] = true;
+          if (!selectedNodeId) {
+            setSelectedNodeId(org.id);
+          }
+        } else {
+          initialExpanded[org.id] = !exceedsLimit;
+        }
+      });
+      setExpandedNodes(initialExpanded);
+    }
+  }, [organizations]);
+
+  // Live filter matching logic: get all node IDs that match or are ancestors of matches
+  const getFilteredOrgIds = () => {
+    if (!searchTerm.trim()) return null;
+    const term = searchTerm.toLowerCase();
+    const matchedIds = new Set();
+    organizations.forEach(org => {
+      if (org.name.toLowerCase().includes(term)) {
+        matchedIds.add(org.id);
+      }
+    });
+
+    const visibleIds = new Set(matchedIds);
+    const addAncestors = (orgId) => {
+      const org = organizations.find(o => o.id === orgId);
+      if (org && org.parent_id !== null) {
+        visibleIds.add(org.parent_id);
+        addAncestors(org.parent_id);
+      }
+    };
+    matchedIds.forEach(id => addAncestors(id));
+    return visibleIds;
+  };
+
+  // Expand matching paths when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() && organizations.length > 0) {
+      const visibleIds = getFilteredOrgIds();
+      if (visibleIds) {
+        const newExpanded = {};
+        visibleIds.forEach(id => {
+          newExpanded[id] = true;
+        });
+        setExpandedNodes(prev => ({ ...prev, ...newExpanded }));
+      }
+    }
+  }, [searchTerm]);
+
+  const toggleNode = (nodeId) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [nodeId]: !prev[nodeId]
+    }));
+  };
+
+  const handleCopyID = (nodeId) => {
+    navigator.clipboard.writeText(nodeId.toString());
+  };
+
+  const getBreadcrumbs = () => {
+    if (!selectedNodeId) return [];
+    const path = [];
+    let currentId = selectedNodeId;
+    while (currentId !== null) {
+      const org = organizations.find(o => o.id === currentId);
+      if (!org) break;
+      path.unshift(org);
+      currentId = org.parent_id;
+    }
+    return path;
+  };
+
+  // Fetch initial data
+  useEffect(() => {
+    fetchOrganizations();
+    fetchRoles();
+    fetchDelegations();
+    fetchUsers();
+    if (user.role === 'Admin' || user.role === 'Super Admin' || user.permissions?.includes('invite:generate')) {
+      fetchInvites();
+      fetchBlockedUsers();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'emailLogs') {
+      fetchEmailLogs();
+    }
+  }, [activeTab]);
+
+  const fetchOrganizations = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/organizations', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOrganizations(data.organizations || []);
+        if (data.organizations && data.organizations.length > 0 && !inviteOrg) {
+          setInviteOrg(data.organizations[0].name);
+        }
+        if (data.organizations && data.organizations.length > 0 && !empOrg) {
+          setEmpOrg(data.organizations[0].name);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching organizations:', err);
+    }
+  };
+
+  const fetchInvites = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/invites', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setInvites(data.invites || []);
+      }
+    } catch (err) {
+      console.error('Error fetching invites:', err);
+    }
+  };
+
+  const fetchBlockedUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/auth/blocked', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBlockedUsers(data.blockedUsers || []);
+      }
+    } catch (err) {
+      console.error('Error fetching blocked users:', err);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/roles', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRoles(data.roles || []);
+      }
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+    }
+  };
+
+  const fetchDelegations = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/role-delegation-policies', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDelegations(data.delegations || []);
+      }
+    } catch (err) {
+      console.error('Error fetching delegations:', err);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/role-assignment-policies', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsersList(data.users || []);
+        if (data.users && data.users.length > 0 && !delegateToId) {
+          setDelegateToId(data.users[0].id.toString());
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
+
+  const fetchEmailLogs = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/email/logs', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setEmailLogs(data.logs || []);
+      }
+    } catch (err) {
+      console.error('Error fetching email logs:', err);
+    }
+  };
+
+  const handleDelegateSubmit = async (e) => {
+    e.preventDefault();
+    if (!delegateToId || !delegateRole || !delegateStartDate || !delegateEndDate) {
+      setMessage({ type: 'error', text: 'All fields are required for temporary delegation.' });
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/role-delegation-policies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        },
+        body: JSON.stringify({
+          delegateToId: parseInt(delegateToId),
+          roleName: delegateRole,
+          startDate: delegateStartDate,
+          endDate: delegateEndDate
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message });
+        fetchDelegations();
+        setDelegateStartDate('');
+        setDelegateEndDate('');
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to delegate role.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Network error occurred.' });
+    }
+  };
+
+  const handleRevokeDelegation = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/role-delegation-policies/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message });
+        fetchDelegations();
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to revoke delegation.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Network error occurred.' });
+    }
+  };
+
+  const handleClearEmailLogs = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/email/clear', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (response.ok) {
+        setEmailLogs([]);
+        setMessage({ type: 'success', text: 'Simulated email logs cleared.' });
+      }
+    } catch (err) {
+      console.error('Error clearing email logs:', err);
+    }
+  };
+
+  const handleAiSubmit = async (e) => {
+    e.preventDefault();
+    if (!aiInput.trim()) return;
+
+    const userMessage = { role: 'user', content: aiInput };
+    setAiMessages(prev => [...prev, userMessage]);
+    const currentInput = aiInput;
+    setAiInput('');
+    setIsAiTyping(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/ai/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        },
+        body: JSON.stringify({ query: currentInput, activeTab })
+      });
+      const data = await response.json();
+      setIsAiTyping(false);
+      if (response.ok) {
+        setAiMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      } else {
+        setAiMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error || 'Failed to process AI query.'}` }]);
+      }
+    } catch (err) {
+      setIsAiTyping(false);
+      setAiMessages(prev => [...prev, { role: 'assistant', content: 'Failed to contact AI service. Please verify server status.' }]);
+    }
+  };
+
+  const handleCreateRole = async (e) => {
+    e.preventDefault();
+    if (!newRoleName.trim()) return;
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        },
+        body: JSON.stringify({
+          name: newRoleName.trim(),
+          level: newRoleLevel,
+          permissions: newRolePerms
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create role.');
+
+      setMessage({ type: 'success', text: `Role "${newRoleName}" created successfully.` });
+      setNewRoleName('');
+      setNewRoleLevel(10);
+      setNewRolePerms(['org:read']);
+      fetchRoles();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateRole = async (e) => {
+    e.preventDefault();
+    if (!editRoleName.trim() || !editingRoleId) return;
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/roles/${editingRoleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        },
+        body: JSON.stringify({
+          name: editRoleName.trim(),
+          level: editRoleLevel,
+          permissions: editRolePerms
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update role.');
+
+      setMessage({ type: 'success', text: 'Workspace role updated successfully.' });
+      setEditingRoleId(null);
+      setEditRoleName('');
+      fetchRoles();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRole = async (roleId) => {
+    if (!confirm('Are you sure you want to delete this role?')) return;
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/roles/${roleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        }
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to delete role.');
+
+      setMessage({ type: 'success', text: data.message });
+      fetchRoles();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnblockUser = async (userId) => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/auth/unblock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        },
+        body: JSON.stringify({ userId })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to unblock user account.');
+
+      setMessage({ type: 'success', text: data.message });
+      fetchBlockedUsers();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDirectRegisterEmployee = async (e) => {
+    e.preventDefault();
+    if (!empName.trim() || !empEmail.trim() || !empPassword.trim() || !empOrg || !empRole) {
+      setMessage({ type: 'error', text: 'All direct employee fields are required.' });
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: empName.trim(),
+          email: empEmail.trim().toLowerCase(),
+          password: empPassword.trim(),
+          role: empRole,
+          organization: empOrg
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to register employee.');
+
+      setMessage({ type: 'success', text: `Employee account for "${empName}" created successfully.` });
+      setEmpName('');
+      setEmpEmail('');
+      setEmpPassword('');
+      setEmpRole('Employee');
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddOrg = async (e) => {
+    e.preventDefault();
+    if (!newOrgName.trim()) return;
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/organizations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        },
+        body: JSON.stringify({
+          name: newOrgName.trim(),
+          parentId: newOrgParentId || null
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create organization unit.');
+
+      setMessage({ type: 'success', text: `Department "${newOrgName}" added successfully.` });
+      setNewOrgName('');
+      setNewOrgParentId('');
+      fetchOrganizations();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateInvite = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/invites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('wfm_token')}`
+        },
+        body: JSON.stringify({
+          role: inviteRole,
+          organization: inviteOrg
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to generate invite code.');
+
+      setMessage({ type: 'success', text: 'New onboarding invite code generated.' });
+      fetchInvites();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    alert(`Copied invite code: ${code}`);
+  };
+
+  // Recursive Tree Rendering
+  const renderOrgTree = (parentId) => {
+    const visibleIds = getFilteredOrgIds();
+    const allChildren = organizations.filter(org => org.parent_id === parentId);
+    
+    // Filter matching branches when searching
+    const children = visibleIds 
+      ? allChildren.filter(org => visibleIds.has(org.id))
+      : allChildren;
+
+    if (children.length === 0) return null;
+
+    return (
+      <div 
+        className="tree-branch-container" 
+        style={{ display: expandedNodes[parentId] ? 'block' : 'none' }}
+      >
+        {children.map(child => {
+          const hasChildren = organizations.some(org => org.parent_id === child.id);
+          const isExpanded = !!expandedNodes[child.id];
+          const isSelected = selectedNodeId === child.id;
+          
+          return (
+            <div key={child.id} className="tree-node-wrapper tree-child-node">
+              <div 
+                className="tree-node-card-row" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  margin: '6px 0',
+                  position: 'relative'
+                }}
+              >
+                {/* Expand/Collapse Chevron toggle */}
+                {hasChildren ? (
+                  <button 
+                    type="button"
+                    onClick={() => toggleNode(child.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#64748b',
+                      transition: 'transform 0.2s',
+                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                      borderRadius: '4px'
+                    }}
+                    title={isExpanded ? "Collapse" : "Expand"}
+                  >
+                    <ChevronRight size={16} strokeWidth={2} />
+                  </button>
+                ) : (
+                  <div style={{ width: '24px' }} /> // spacer matching chevron padding + icon size
+                )}
+                
+                {/* Node card */}
+                <div 
+                  className="tree-node-content" 
+                  onClick={() => setSelectedNodeId(child.id)}
+                  style={{ 
+                    cursor: 'pointer',
+                    borderColor: isSelected ? '#2563eb' : 'rgba(74, 46, 42, 0.08)',
+                    boxShadow: isSelected ? '0 0 0 2px rgba(37, 99, 235, 0.15)' : 'var(--shadow-sm)',
+                    background: isSelected ? '#f8fafc' : '#ffffff',
+                    transition: 'all 0.15s'
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedNodeId(child.id); }}
+                >
+                  <Building2 size={20} strokeWidth={1.75} style={{ color: isSelected ? '#2563eb' : '#64748b' }} />
+                  <span className="node-name" style={{ color: isSelected ? '#0f172a' : 'inherit' }}>{child.name}</span>
+                  
+                  {/* Hover copy ID button */}
+                  <div className="node-id-hover-container">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent selecting node when copying ID
+                        handleCopyID(child.id);
+                      }}
+                      className="copy-id-btn"
+                    >
+                      <Copy size={12} strokeWidth={1.75} />
+                      <span className="tooltip-text">Copy ID: {child.id}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Recursively render children */}
+              {hasChildren && renderOrgTree(child.id)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const getRoleBadge = (role) => {
     switch(role) {
       case 'Super Admin':
         return <span className="user-badge badge-super-admin">Super Admin</span>;
       case 'Admin':
-        return <span className="user-badge badge-admin">Admin / Manager</span>;
+        return <span className="user-badge badge-admin">Admin</span>;
       default:
         return <span className="user-badge badge-employee">Employee</span>;
     }
   };
 
-  // Submodule actions list for Employee
-  const employeeModules = [
-    {
-      title: "📅 Shift Calendar",
-      desc: "View your weekly work schedules, assigned shifts, and register for open shifts."
-    },
-    {
-      title: "✍ Leave Request",
-      desc: "Submit new leave applications or check the status of your existing time-off requests."
-    },
-    {
-      title: "🤖 AI Assistant",
-      desc: "Ask the WFM AI Operations Assistant to check policies, request shifts, or answer HR queries."
-    },
-    {
-      title: "📊 My Performance",
-      desc: "View your attendance score, average weekly hours, and manager feedback."
-    }
-  ];
+  return (
+    <div style={{
+      display: 'flex',
+      width: '100%',
+      minHeight: '100vh',
+      backgroundColor: '#f8fafc',
+      fontFamily: 'var(--font-sans)',
+      color: '#1e293b'
+    }}>
+      {/* Toast message alert */}
+      {message && (
+        <div className={`toast-msg toast-${message.type}`} style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          zIndex: 9999,
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+        }}>
+          <span>{message.type === 'success' ? '✓' : '⚠'}</span>
+          <span>{message.text}</span>
+          <button className="toast-close" onClick={() => setMessage(null)}>×</button>
+        </div>
+      )}
 
-  // Submodule actions list for Admin
-  const adminModules = [
-    {
-      title: "📋 Shift Scheduler",
-      desc: "Create and publish weekly schedules, assign roles, and handle shift swaps."
-    },
-    {
-      title: "🔔 Leave Approvals",
-      desc: "Review and approve leave requests, track team capacity, and manage coverage gaps."
-    },
-    {
-      title: "📈 Workforce Analytics",
-      desc: "Analyze employee productivity, attendance logs, and monitor overtime hours."
-    },
-    {
-      title: "⚙ Shift Rules",
-      desc: "Configure shift patterns, compliance regulations, and maximum working hours."
-    }
-  ];
+      {/* Left Sidebar */}
+      <aside style={{
+        width: '260px',
+        backgroundColor: '#ffffff',
+        borderRight: '1px solid #e2e8f0',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '30px 20px',
+        flexShrink: 0
+      }}>
+        <div>
+          {/* Logo Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }}>
+            <div style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              backgroundColor: '#3b82f6',
+              backgroundImage: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'bold' }}>⚙</span>
+            </div>
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '16px',
+              fontWeight: '700',
+              letterSpacing: '0.5px',
+              color: '#0f172a'
+            }}>
+              WORKFORCE OS
+            </span>
+          </div>
 
-  // Submodule actions list for Super Admin
-  const superAdminModules = [
-    {
-      title: "🏢 Organization Control",
-      desc: "Manage multi-tenant subscriptions, register new organization units, and edit settings."
-    },
-    {
-      title: "👤 Tenant User Directory",
-      desc: "Manage global user databases, assign Admin/Super Admin access levels, and audit accounts."
-    },
-    {
-      title: "🛡 System Audit Log",
-      desc: "View full system audit trails, access activities, database transactions, and trace errors."
-    },
-    {
-      title: "🔌 API Keys & Integrations",
-      desc: "Configure third-party HRIS, payroll, and identity provider (IdP) integration systems."
-    }
-  ];
+          {/* Nav list */}
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              onClick={() => { setActiveTab('overview'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'overview' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'overview' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'overview' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <LayoutDashboard size={20} strokeWidth={1.75} /> My Dashboard
+            </button>
 
-  const getModules = () => {
-    if (user.role === 'Super Admin') return superAdminModules;
-    if (user.role === 'Admin') return adminModules;
-    return employeeModules;
+            <button
+              onClick={() => { setActiveTab('organizations'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'organizations' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'organizations' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'organizations' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Building2 size={20} strokeWidth={1.75} /> Organization Management
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('employees'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'employees' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'employees' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'employees' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Users size={20} strokeWidth={1.75} /> Employees Directory
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('insights'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'insights' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'insights' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'insights' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <TrendingUp size={20} strokeWidth={1.75} /> Workforce Insights
+            </button>
+
+            {(user.role === 'Admin' || user.role === 'Super Admin') && (
+              <button
+                onClick={() => { setActiveTab('auditLogs'); setMessage(null); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: activeTab === 'auditLogs' ? '#eff6ff' : 'transparent',
+                  color: activeTab === 'auditLogs' ? '#2563eb' : '#64748b',
+                  fontWeight: activeTab === 'auditLogs' ? '600' : '500',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '14px',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <Shield size={20} strokeWidth={1.75} /> Audit Log Compliance
+              </button>
+            )}
+
+            <button
+              onClick={() => { setActiveTab('recruitment'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'recruitment' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'recruitment' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'recruitment' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Briefcase size={20} strokeWidth={1.75} /> Recruitment Board
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('attendance'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'attendance' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'attendance' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'attendance' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Clock size={20} strokeWidth={1.75} /> Attendance Clock
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('leave'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'leave' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'leave' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'leave' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Calendar size={20} strokeWidth={1.75} /> Leave Management
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('payroll'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'payroll' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'payroll' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'payroll' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <DollarSign size={20} strokeWidth={1.75} /> Payroll Remuneration
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('performance'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'performance' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'performance' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'performance' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Award size={20} strokeWidth={1.75} /> Performance Targets
+            </button>
+
+            {(user.role === 'Admin' || user.role === 'Super Admin' || user.permissions?.includes('invite:generate')) && (
+              <button
+                onClick={() => { setActiveTab('invites'); setMessage(null); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: activeTab === 'invites' ? '#eff6ff' : 'transparent',
+                  color: activeTab === 'invites' ? '#2563eb' : '#64748b',
+                  fontWeight: activeTab === 'invites' ? '600' : '500',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '14px',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <span>✉</span> Onboarding Invites
+              </button>
+            )}
+
+            {(user.role === 'Super Admin' || user.permissions?.includes('role:manage')) && (
+              <button
+                onClick={() => { setActiveTab('roles'); setMessage(null); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: activeTab === 'roles' ? '#eff6ff' : 'transparent',
+                  color: activeTab === 'roles' ? '#2563eb' : '#64748b',
+                  fontWeight: activeTab === 'roles' ? '600' : '500',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '14px',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <Shield size={20} strokeWidth={1.75} /> Role Manager
+              </button>
+            )}
+
+            <button
+              onClick={() => { setActiveTab('delegations'); setMessage(null); }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === 'delegations' ? '#eff6ff' : 'transparent',
+                color: activeTab === 'delegations' ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === 'delegations' ? '600' : '500',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '14px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <ClipboardList size={20} strokeWidth={1.75} /> Temporary Delegations
+            </button>
+
+            {(user.role === 'Admin' || user.role === 'Super Admin') && (
+              <button
+                onClick={() => { setActiveTab('emailLogs'); setMessage(null); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: activeTab === 'emailLogs' ? '#eff6ff' : 'transparent',
+                  color: activeTab === 'emailLogs' ? '#2563eb' : '#64748b',
+                  fontWeight: activeTab === 'emailLogs' ? '600' : '500',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '14px',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <span>✉</span> Email Simulator
+              </button>
+            )}
+          </nav>
+        </div>
+
+        {/* Sidebar Footer */}
+        <button
+          onClick={onLogout}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: 'transparent',
+            color: '#ef4444',
+            fontWeight: '600',
+            textAlign: 'left',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            fontSize: '14px',
+            transition: 'all 0.15s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <span>🚪</span> Logout Account
+        </button>
+      </aside>
+
+      {/* Right Main viewport */}
+      <main style={{
+        flexGrow: 1,
+        padding: '40px',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '32px'
+      }}>
+        {/* Top Header Bar */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid #e2e8f0',
+          paddingBottom: '20px'
+        }}>
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#0f172a',
+            textTransform: 'capitalize'
+          }}>
+            {activeTab === 'overview' ? 'Dashboard' : activeTab.replace(/([A-Z])/g, ' $1')}
+          </h2>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            {/* Group notification bell + user identity pill together */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
+              
+              {/* Notification bell */}
+              <span 
+                style={{ cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', color: '#64748b' }} 
+                title="Notifications"
+                role="button"
+                tabIndex={0}
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                <Bell size={20} strokeWidth={1.75} />
+                {notifications.some(n => !n.read) && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ef4444'
+                  }} />
+                )}
+
+                {/* Notifications dropdown list */}
+                {showNotifications && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '30px',
+                    right: '0',
+                    width: '280px',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                    zIndex: 100,
+                    padding: '8px 0',
+                    textAlign: 'left'
+                  }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ padding: '8px 16px', borderBottom: '1px solid #f1f5f9', fontWeight: 'bold', fontSize: '12.5px', color: '#1e293b', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>System Notifications</span>
+                      <button 
+                        style={{ border: 'none', background: 'none', color: '#2563eb', fontSize: '10.5px', cursor: 'pointer' }}
+                        onClick={() => {
+                          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                        }}
+                      >
+                        Mark all read
+                      </button>
+                    </div>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      {notifications.length === 0 ? (
+                        <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>No notifications.</div>
+                      ) : (
+                        notifications.map(n => (
+                          <div key={n.id} style={{ padding: '8px 16px', borderBottom: '1px solid #f1f5f9', fontSize: '11.5px', background: n.read ? '#ffffff' : '#eff6ff' }}>
+                            <p style={{ margin: '0 0 2px 0', color: '#334155' }}>{n.text}</p>
+                            <span style={{ color: '#94a3b8', fontSize: '9px' }}>{n.time}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </span>
+
+              {/* Impersonator selector (Admins only) */}
+              {(user.role === 'Super Admin' || user.role === 'Admin') && (
+                <select
+                  value={impersonatedRole || user.role}
+                  onChange={(e) => setImpersonatedRole(e.target.value === user.role ? null : e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '12px',
+                    background: '#eff6ff',
+                    color: '#2563eb',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value={user.role}>Role: {user.role} (Original)</option>
+                  <option value="Employee">Impersonate: Employee</option>
+                  <option value="HR">Impersonate: HR</option>
+                  <option value="Finance">Impersonate: Finance</option>
+                  <option value="Admin">Impersonate: Admin</option>
+                </select>
+              )}
+
+              {/* Profile badge */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                backgroundColor: '#e2e8f0',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#334155'
+              }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                Welcome, {user.name} ({activeUserRole})
+              </div>
+            </div>
+
+            {/* Vertical separator */}
+            <div style={{ width: '1px', height: '24px', backgroundColor: '#e2e8f0' }} />
+
+            {/* Far right Theme toggle */}
+            <button 
+              type="button"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748b',
+                padding: '6px',
+                borderRadius: '6px',
+                transition: 'background-color 0.15s'
+              }}
+              title="Toggle Theme"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              {isDarkMode ? <Sun size={20} strokeWidth={1.75} /> : <Moon size={20} strokeWidth={1.75} />}
+            </button>
+          </div>
+        </div>
+
+        {/* 1. OVERVIEW TAB: SaaS Product Dashboard Grid */}
+        {activeTab === 'overview' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }} className="fade-in">
+            {/* Greeting Banner */}
+            <div style={{
+              backgroundColor: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', marginBottom: '6px' }}>
+                  Good day, {user.name}! 👋
+                </h3>
+                <p style={{ fontSize: '14px', color: '#047857', marginBottom: '8px' }}>
+                  {user.role} - {user.organization}
+                </p>
+                <span style={{
+                  display: 'inline-block',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: '#047857',
+                  backgroundColor: '#d1fae5',
+                  padding: '4px 10px',
+                  borderRadius: '12px'
+                }}>
+                  Staff ID: EMP_{user.id || '103'}
+                </span>
+              </div>
+
+              {/* Attendance Card */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+              }}>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                    DAILY ATTENDANCE
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#334155', marginTop: '2px' }}>
+                    Status: <span style={{ color: '#10b981' }}>PRESENT</span> (09:00 - 18:00)
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  color: '#15803d',
+                  backgroundColor: '#dcfce7',
+                  padding: '6px 12px',
+                  borderRadius: '20px'
+                }}>
+                  Completed
+                </span>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '24px'
+            }}>
+              {/* Stat 1: Leave Requests */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px' }}>LEAVE REQUESTS</div>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a' }}>1</div>
+                  <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>1 pending approval</div>
+                </div>
+                <span style={{ fontSize: '32px' }}>📅</span>
+              </div>
+
+              {/* Stat 2: Approved Leaves */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px' }}>APPROVED LEAVES</div>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a' }}>0</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>This calendar month</div>
+                </div>
+                <span style={{ fontSize: '32px' }}>✅</span>
+              </div>
+
+              {/* Stat 3: Support Tickets */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px' }}>SUPPORT TICKETS</div>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a' }}>0</div>
+                  <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>0 active tickets</div>
+                </div>
+                <span style={{ fontSize: '32px' }}>🛡️</span>
+              </div>
+
+              {/* Stat 4: Work Shift */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px' }}>WORK SHIFT</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>09:00 - 18:00</div>
+                  <div style={{ fontSize: '12px', color: '#3b82f6', marginTop: '4px' }}>Standard Shift</div>
+                </div>
+                <span style={{ fontSize: '32px' }}>⏰</span>
+              </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1.6fr 1.4fr',
+              gap: '32px'
+            }}>
+              {/* Assigned Tasks */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '24px'
+              }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>My Assigned Tasks</h4>
+                
+                <div style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  backgroundColor: '#f8fafc',
+                  position: 'relative'
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    color: '#b91c1c',
+                    backgroundColor: '#fee2e2',
+                    padding: '4px 10px',
+                    borderRadius: '12px'
+                  }}>
+                    HIGH PRIORITY
+                  </span>
+
+                  <h5 style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
+                    API Integration
+                  </h5>
+                  <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
+                    Project: Employee Portal v2
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '24px', fontSize: '13px', color: '#475569' }}>
+                    <div>
+                      <strong>Status:</strong> <span style={{ color: '#d97706', fontWeight: '600' }}>In Progress</span>
+                    </div>
+                    <div>
+                      <strong>Deadline:</strong> 2026-07-15
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Self Service Portal */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '24px'
+              }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>Self Service Portal</h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <button 
+                    onClick={() => setActiveTab('delegations')}
+                    style={{
+                      width: '100%',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      backgroundColor: '#ffffff',
+                      color: '#334155',
+                      fontWeight: '600',
+                      fontSize: '13.5px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                  >
+                    <span>Apply for Personal Leave</span>
+                    <span>→</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setMessage({ type: 'success', text: 'Salary Payslip downloaded successfully!' })}
+                    style={{
+                      width: '100%',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      backgroundColor: '#ffffff',
+                      color: '#334155',
+                      fontWeight: '600',
+                      fontSize: '13.5px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                  >
+                    <span>Download Salary Payslip</span>
+                    <span>→</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setIsAiOpen(true)}
+                    style={{
+                      width: '100%',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      backgroundColor: '#ffffff',
+                      color: '#334155',
+                      fontWeight: '600',
+                      fontSize: '13.5px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                  >
+                    <span>Raise Helpdesk Support Ticket (AI Assistant)</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* 2. ORGANIZATIONS TAB: Departments, Designations, Locations, Shifts, Holidays, Hierarchies */}
+      {activeTab === 'organizations' && (
+        <OrganizationsTab user={activeUser} />
+      )}
+
+      {/* 2.1 EMPLOYEES DIRECTORY & ONBOARDING TAB */}
+      {activeTab === 'employees' && (
+        <EmployeesTab 
+          user={activeUser} 
+          prefilledOnboarding={prefilledOnboarding} 
+          onClearPrefill={() => setPrefilledOnboarding(null)} 
+        />
+      )}
+
+      {/* 2.2 INSIGHTS GRAPH & AI NARRATIVE TAB */}
+      {activeTab === 'insights' && (
+        <InsightsTab user={activeUser} />
+      )}
+
+      {/* 2.3 AUDIT LOG COMPLIANCE VIEW */}
+      {activeTab === 'auditLogs' && (user.role === 'Admin' || user.role === 'Super Admin') && (
+        <AuditLogsTab />
+      )}
+
+      {/* 2.4 RECRUITMENT PIPELINE */}
+      {activeTab === 'recruitment' && (
+        <RecruitmentTab user={activeUser} onPrefillOnboarding={handlePrefillOnboarding} />
+      )}
+
+      {/* 2.5 ATTENDANCE MANAGEMENT */}
+      {activeTab === 'attendance' && (
+        <AttendanceTab user={activeUser} />
+      )}
+
+      {/* 2.6 LEAVE MANAGEMENT */}
+      {activeTab === 'leave' && (
+        <LeaveTab user={activeUser} />
+      )}
+
+      {/* 2.7 PAYROLL EXPLAINER */}
+      {activeTab === 'payroll' && (
+        <PayrollTab user={activeUser} />
+      )}
+
+      {/* 2.8 PERFORMANCE TARGETS */}
+      {activeTab === 'performance' && (
+        <PerformanceTab user={activeUser} />
+      )}
+
+      {/* 3. INVITES TAB: Table of Codes, Copy Code, Generate Codes */}
+      {activeTab === 'invites' && (user.role === 'Admin' || user.role === 'Super Admin' || user.permissions?.includes('invite:generate')) && (
+        <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          
+          {/* Row 1: Invite Tokens */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1.3fr', gap: '32px', width: '100%' }}>
+            {/* Active Invites List Table */}
+            <div className="auth-card" style={{ maxWidth: '100%', padding: '30px' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text-dark)', marginBottom: '16px' }}>
+                ✉ Onboarding Invite Codes
+              </h2>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                Manage and copy active registration tokens for onboarding team members.
+              </p>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid rgba(74, 46, 42, 0.08)', textAlign: 'left' }}>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Invite Code</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Role</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Department</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Status</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-dark)' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invites.length > 0 ? (
+                      invites.map(inv => (
+                        <tr key={inv.id} style={{ borderBottom: '1px solid rgba(74, 46, 42, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', fontFamily: 'monospace', fontWeight: 'bold' }}>{inv.code}</td>
+                          <td style={{ padding: '12px 8px' }}>{inv.role}</td>
+                          <td style={{ padding: '12px 8px' }}>{inv.organization}</td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span className={`user-badge ${inv.status === 'active' ? 'badge-employee' : 'badge-super-admin'}`} style={{ fontSize: '10px', textTransform: 'uppercase' }}>
+                              {inv.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                            {inv.status === 'active' ? (
+                              <button 
+                                className="btn-secondary" 
+                                style={{ padding: '4px 10px', fontSize: '11px', margin: 0 }}
+                                onClick={() => handleCopyCode(inv.code)}
+                              >
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <Copy size={12} strokeWidth={1.75} /> Copy
+                                </span>
+                              </button>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Redeemed</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          No invite codes generated yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Generate Code Form */}
+            <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', height: 'fit-content' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text-dark)', marginBottom: '16px' }}>
+                🎫 Generate Invite Token
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                Create a locked invite link containing preset roles and organizational units.
+              </p>
+
+              <form onSubmit={handleCreateInvite}>
+                <div className="form-group form-select-container">
+                  <select
+                    id="inviteRole"
+                    className="form-control form-select"
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    disabled={loading}
+                    required
+                  >
+                    {roles.map(r => (
+                      <option key={r.id} value={r.name}>{r.name} (Level: {r.level})</option>
+                    ))}
+                  </select>
+                  <label htmlFor="inviteRole" className="form-label">Assign Role Privilege</label>
+                </div>
+
+                <div className="form-group form-select-container">
+                  <select
+                    id="inviteOrg"
+                    className="form-control form-select"
+                    value={inviteOrg}
+                    onChange={(e) => setInviteOrg(e.target.value)}
+                    disabled={loading}
+                    required
+                  >
+                    {organizations.map(org => (
+                      <option key={org.id} value={org.name}>{org.name}</option>
+                    ))}
+                  </select>
+                  <label htmlFor="inviteOrg" className="form-label">Assign Department Unit</label>
+                </div>
+
+                <button type="submit" className="btn-primary" disabled={loading || organizations.length === 0}>
+                  {loading ? 'Generating Code...' : 'Generate Onboarding Token'}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Row 2: Direct Employee Creation & Blocked Accounts Manager */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.7fr', gap: '32px', width: '100%' }}>
+            
+            {/* Create Employee Direct Form */}
+            <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', height: 'fit-content' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text-dark)', marginBottom: '16px' }}>
+                👤 Create Employee Account Direct
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                Register new employee files directly without sharing invitation tokens.
+              </p>
+
+              <form onSubmit={handleDirectRegisterEmployee}>
+                <div className="form-group">
+                  <input
+                    type="text"
+                    id="empName"
+                    className="form-control"
+                    placeholder=" "
+                    value={empName}
+                    onChange={(e) => setEmpName(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  <label htmlFor="empName" className="form-label">Full Name</label>
+                </div>
+
+                <div className="form-group">
+                  <input
+                    type="email"
+                    id="empEmail"
+                    className="form-control"
+                    placeholder=" "
+                    value={empEmail}
+                    onChange={(e) => setEmpEmail(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  <label htmlFor="empEmail" className="form-label">Email Address</label>
+                </div>
+
+                <div className="form-group">
+                  <input
+                    type="password"
+                    id="empPassword"
+                    className="form-control"
+                    placeholder=" "
+                    value={empPassword}
+                    onChange={(e) => setEmpPassword(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  <label htmlFor="empPassword" className="form-label">Temporary Password</label>
+                </div>
+
+                <div className="form-group form-select-container">
+                  <select
+                    id="empRoleSelect"
+                    className="form-control form-select"
+                    value={empRole}
+                    onChange={(e) => setEmpRole(e.target.value)}
+                    disabled={loading}
+                    required
+                  >
+                    {roles.filter(r => r.level < user.level).map(r => (
+                      <option key={r.id} value={r.name}>{r.name} (Level: {r.level})</option>
+                    ))}
+                  </select>
+                  <label htmlFor="empRoleSelect" className="form-label">Assign Role Privilege</label>
+                </div>
+
+                <div className="form-group form-select-container">
+                  <select
+                    id="empOrgSelect"
+                    className="form-control form-select"
+                    value={empOrg}
+                    onChange={(e) => setEmpOrg(e.target.value)}
+                    disabled={loading}
+                    required
+                  >
+                    {organizations.map(org => (
+                      <option key={org.id} value={org.name}>{org.name}</option>
+                    ))}
+                  </select>
+                  <label htmlFor="empOrgSelect" className="form-label">Assign Department Node</label>
+                </div>
+
+                <button type="submit" className="btn-primary" disabled={loading || organizations.length === 0}>
+                  {loading ? 'Creating Account...' : 'Create Employee Profile'}
+                </button>
+              </form>
+            </div>
+
+            {/* Blocked Accounts Manager */}
+            <div className="auth-card" style={{ maxWidth: '100%', padding: '30px' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text-dark)', marginBottom: '16px' }}>
+                🔒 Locked-Out User Security Accounts
+              </h2>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                Profiles locked out after 3 failed login attempts. Click unlock to restore access.
+              </p>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid rgba(74, 46, 42, 0.08)', textAlign: 'left' }}>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Name</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Email</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Role</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-dark)' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {blockedUsers.length > 0 ? (
+                      blockedUsers.map(bUser => (
+                        <tr key={bUser.id} style={{ borderBottom: '1px solid rgba(74, 46, 42, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', fontWeight: 600 }}>{bUser.name}</td>
+                          <td style={{ padding: '12px 8px' }}>{bUser.email}</td>
+                          <td style={{ padding: '12px 8px' }}>{bUser.role}</td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                            <button 
+                              className="btn-primary" 
+                              style={{ padding: '4px 12px', fontSize: '11px', margin: 0, background: '#55efc4', border: '1px solid #55efc4', color: '#10523e' }}
+                              onClick={() => handleUnblockUser(bUser.id)}
+                              disabled={loading}
+                            >
+                              🔓 Unlock
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          No accounts are currently locked out.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* 4. ROLES TAB: Role Listing & Custom Role Builder */}
+      {activeTab === 'roles' && (user.role === 'Super Admin' || user.permissions?.includes('role:manage')) && (
+        <section className="fade-in" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1.4fr', gap: '32px' }}>
+          
+          {/* Left Panel: Active Roles Table */}
+          <div className="auth-card" style={{ maxWidth: '100%', padding: '30px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text-dark)', marginBottom: '16px' }}>
+              🛡 Workspace Roles Directory
+            </h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px' }}>
+              System defaults and custom operational role hierarchies with action permission scopes.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {roles.map(r => {
+                const isSystemRole = ['Super Admin', 'Admin', 'Employee'].includes(r.name);
+                const isEditing = editingRoleId === r.id;
+
+                return (
+                  <div 
+                    key={r.id} 
+                    style={{ 
+                      padding: '20px', 
+                      background: isSystemRole ? 'rgba(74, 46, 42, 0.02)' : '#ffffff', 
+                      border: '1px solid rgba(74, 46, 42, 0.08)', 
+                      borderRadius: '12px',
+                      boxShadow: 'var(--shadow-sm)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          {isSystemRole ? (
+                            <Crown size={18} strokeWidth={1.75} style={{ color: '#eab308' }} />
+                          ) : (
+                            <Shield size={18} strokeWidth={1.75} style={{ color: '#2563eb' }} />
+                          )}
+                        </span>
+                        <strong style={{ fontSize: '15.5px', color: 'var(--text-dark)' }}>{r.name}</strong>
+                        {isSystemRole && (
+                          <span className="card-badge" style={{ position: 'static', fontSize: '9px', background: 'rgba(74,46,42,0.05)', color: 'var(--text-muted)' }}>SYSTEM</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '12px', background: 'rgba(247, 215, 148, 0.25)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', color: '#b8860b' }}>
+                        Level Weight: {r.level}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {r.permissions.map(p => (
+                        <span 
+                          key={p} 
+                          className="user-badge badge-employee" 
+                          style={{ fontSize: '10px', textTransform: 'lowercase', background: 'rgba(74, 46, 42, 0.04)', color: 'var(--text-dark)', border: '1px solid rgba(74, 46, 42, 0.08)' }}
+                        >
+                          🔑 {p}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Actions (Only for custom roles where role level < user level) */}
+                    {!isSystemRole && r.level < user.level && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignSelf: 'flex-end' }}>
+                        <button 
+                          className="btn-secondary" 
+                          style={{ padding: '4px 12px', fontSize: '11px', margin: 0 }}
+                          onClick={() => {
+                            setEditingRoleId(r.id);
+                            setEditRoleName(r.name);
+                            setEditRoleLevel(r.level);
+                            setEditRolePerms(r.permissions);
+                          }}
+                        >
+                          ✏ Edit
+                        </button>
+                        <button 
+                          className="btn-primary" 
+                          style={{ padding: '4px 12px', fontSize: '11px', margin: 0, background: 'rgba(220, 80, 80, 0.1)', color: 'var(--pastel-red)', border: '1px solid rgba(220, 80, 80, 0.2)' }}
+                          onClick={() => handleDeleteRole(r.id)}
+                        >
+                          🗑 Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right Panel: Role Builder (Create or Edit Form) */}
+          <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', height: 'fit-content' }}>
+            {editingRoleId ? (
+              // Edit Role Form
+              <>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text-dark)', marginBottom: '16px' }}>
+                  ✏ Edit Workspace Role
+                </h2>
+                <form onSubmit={handleUpdateRole}>
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder=" "
+                      value={editRoleName}
+                      onChange={(e) => setEditRoleName(e.target.value)}
+                      required
+                    />
+                    <label className="form-label">Role Name</label>
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Hierarchy Weight Level</span>
+                      <strong style={{ color: '#b8860b' }}>Level: {editRoleLevel}</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="99"
+                      style={{ width: '100%', accentColor: 'var(--pastel-red)' }}
+                      value={editRoleLevel}
+                      onChange={(e) => setEditRoleLevel(parseInt(e.target.value))}
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Must be lower than your hierarchy weight ({user.level})</span>
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '10px' }}>
+                      Assign Action Permissions
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {['org:read', 'org:write', 'invite:generate', 'role:manage', 'user:unblock'].map(perm => (
+                        <label key={perm} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={editRolePerms.includes(perm)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditRolePerms([...editRolePerms, perm]);
+                              } else {
+                                setEditRolePerms(editRolePerms.filter(p => p !== perm));
+                              }
+                            }}
+                          />
+                          <span>{perm} ({perm === 'org:read' ? 'View Corporate directory' : perm === 'org:write' ? 'Add departments' : perm === 'invite:generate' ? 'Generate invite codes' : perm === 'role:manage' ? 'CRUD roles' : 'Unlock blocked accounts'})</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="submit" className="btn-primary" style={{ flexGrow: 1 }} disabled={loading}>
+                      Save Role Settings
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn-secondary" 
+                      style={{ width: '100px' }} 
+                      onClick={() => setEditingRoleId(null)}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              // Create Role Form
+              <>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text-dark)', marginBottom: '16px' }}>
+                  🎫 Custom Role Builder
+                </h2>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                  Create modular user permissions levels to delegate administration.
+                </p>
+
+                <form onSubmit={handleCreateRole}>
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder=" "
+                      value={newRoleName}
+                      onChange={(e) => setNewRoleName(e.target.value)}
+                      required
+                    />
+                    <label className="form-label">Role Name (e.g. Engineer)</label>
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Hierarchy Weight Level</span>
+                      <strong style={{ color: '#b8860b' }}>Level: {newRoleLevel}</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="99"
+                      style={{ width: '100%', accentColor: 'var(--pastel-red)' }}
+                      value={newRoleLevel}
+                      onChange={(e) => setNewRoleLevel(parseInt(e.target.value))}
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Must be lower than your hierarchy weight ({user.level})</span>
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '10px' }}>
+                      Assign Action Permissions
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {['org:read', 'org:write', 'invite:generate', 'role:manage', 'user:unblock'].map(perm => (
+                        <label key={perm} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={newRolePerms.includes(perm)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewRolePerms([...newRolePerms, perm]);
+                              } else {
+                                setNewRolePerms(newRolePerms.filter(p => p !== perm));
+                              }
+                            }}
+                          />
+                          <span>{perm} ({perm === 'org:read' ? 'View Corporate directory' : perm === 'org:write' ? 'Add departments' : perm === 'invite:generate' ? 'Generate invite codes' : perm === 'role:manage' ? 'CRUD roles' : 'Unlock blocked accounts'})</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn-primary" disabled={loading || !newRoleName}>
+                    Create Custom Role
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 5. TEMPORARY DELEGATIONS TAB */}
+      {activeTab === 'delegations' && (
+        <section className="fade-in">
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+            {/* Left Card: Active Delegation list */}
+            <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ClipboardList size={20} strokeWidth={1.75} /> Active Delegation Hand-offs
+                  </h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Temporary privilege transfers and acting roles.</p>
+                </div>
+              </div>
+
+              {delegations.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                  No active temporary role delegations established in this workspace.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid rgba(148, 163, 184, 0.1)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '12px 8px' }}>From</th>
+                        <th style={{ padding: '12px 8px' }}>To</th>
+                        <th style={{ padding: '12px 8px' }}>Delegated Role</th>
+                        <th style={{ padding: '12px 8px' }}>Duration</th>
+                        <th style={{ padding: '12px 8px' }}>Status</th>
+                        <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {delegations.map((del) => {
+                        const isActive = del.status === 'active';
+                        return (
+                          <tr key={del.id} style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.06)' }}>
+                            <td style={{ padding: '16px 8px', fontWeight: 'bold' }}>{del.from_name}</td>
+                            <td style={{ padding: '16px 8px' }}>{del.to_name}</td>
+                            <td style={{ padding: '16px 8px' }}>
+                              <span style={{ fontSize: '11px', background: 'var(--pastel-yellow-light)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', color: 'var(--text-dark)' }}>
+                                {del.role_name}
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px 8px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                              <div>Start: {new Date(del.start_date).toLocaleString()}</div>
+                              <div>End: {new Date(del.end_date).toLocaleString()}</div>
+                            </td>
+                            <td style={{ padding: '16px 8px' }}>
+                              <span style={{
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: 'bold',
+                                background: isActive ? 'rgba(85, 239, 196, 0.15)' : 'rgba(74, 46, 42, 0.05)',
+                                color: isActive ? '#10523e' : 'var(--text-muted)'
+                              }}>
+                                {del.status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px 8px', textAlign: 'right' }}>
+                              {isActive && (del.delegate_from_id === user.id || user.role === 'Super Admin' || user.permissions?.includes('role:manage')) && (
+                                <button
+                                  className="btn-danger"
+                                  style={{ padding: '4px 10px', fontSize: '11px', margin: 0 }}
+                                  onClick={() => handleRevokeDelegation(del.id)}
+                                >
+                                  <Trash2 size={12} style={{ marginRight: '4px' }} /> Revoke
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Right Card: Handoff Creator */}
+            <div className="glass-card" style={{ padding: '32px', borderRadius: '24px', height: 'fit-content' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-dark)', marginBottom: '8px' }}>⚡ Delegate Your Privileges</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>Temporarily assign one of your roles to a coworker date-range bounded.</p>
+              
+              <form onSubmit={handleDelegateSubmit}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '6px' }}>
+                    Select Delegate Target (Coworker)
+                  </label>
+                  <select
+                    className="form-input"
+                    value={delegateToId}
+                    onChange={(e) => setDelegateToId(e.target.value)}
+                    style={{ background: '#ffffff' }}
+                  >
+                    <option value="">-- Choose employee --</option>
+                    {usersList.filter(u => u.id !== user.id).map(u => (
+                      <option key={u.id} value={u.id}>{u.name} ({u.email}) - {u.role}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '6px' }}>
+                    Select Role to Delegate
+                  </label>
+                  <select
+                    className="form-input"
+                    value={delegateRole}
+                    onChange={(e) => setDelegateRole(e.target.value)}
+                    style={{ background: '#ffffff' }}
+                  >
+                    {roles.filter(r => r.level <= user.level).map(r => (
+                      <option key={r.name} value={r.name}>{r.name} (Level: {r.level})</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cannot exceed your hierarchy level ({user.level})</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Start Date
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="form-input"
+                      value={delegateStartDate}
+                      onChange={(e) => setDelegateStartDate(e.target.value)}
+                      style={{ background: '#ffffff' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      End Date
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="form-input"
+                      value={delegateEndDate}
+                      onChange={(e) => setDelegateEndDate(e.target.value)}
+                      style={{ background: '#ffffff' }}
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={!delegateToId}>
+                  Establish Delegation Handoff
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 6. EMAIL LOGS SIMULATOR TAB */}
+      {activeTab === 'emailLogs' && (user.role === 'Admin' || user.role === 'Super Admin') && (
+        <section className="fade-in">
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-dark)' }}>✉ Simulated Email Delivery Stream</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Real-time capture of all system welcome notifications and security alerts.</p>
+              </div>
+              <button 
+                className="btn-danger" 
+                style={{ padding: '8px 16px', fontSize: '12px' }}
+                onClick={handleClearEmailLogs}
+              >
+                Clear Log History
+              </button>
+            </div>
+
+            {emailLogs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                No captured emails logged in this simulation session. Trigger an action (like onboarding signup or password resets) to populate.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {emailLogs.map(log => (
+                  <div key={log.id} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', background: '#ffffff', overflow: 'hidden' }}>
+                    {/* Header */}
+                    <div style={{ padding: '12px 16px', background: 'rgba(148, 163, 184, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', fontSize: '12px' }}>
+                      <div>
+                        <strong>To:</strong> <span style={{ color: 'var(--pastel-red)', fontWeight: 'bold' }}>{log.to_email}</span>
+                      </div>
+                      <div style={{ color: 'var(--text-muted)' }}>
+                        {new Date(log.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    {/* Meta info */}
+                    <div style={{ padding: '12px 16px', background: 'rgba(148, 163, 184, 0.01)', borderBottom: '1px solid var(--border-color)', fontSize: '13px' }}>
+                      <div>
+                        <strong>Subject:</strong> {log.subject}
+                      </div>
+                      <div style={{ fontSize: '11px', marginTop: '4px', color: 'var(--text-muted)' }}>
+                        <strong>Template Identifier:</strong> <span style={{ background: 'rgba(148, 163, 184, 0.1)', padding: '1px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>{log.template}</span>
+                      </div>
+                    </div>
+                    {/* Email preview frame */}
+                    <div style={{ padding: '20px', background: '#fdfdfd', fontSize: '13.5px', fontFamily: 'system-ui', lineHeight: '1.6', color: '#2c3e50', whiteSpace: 'pre-wrap' }}>
+                      {log.body}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* COMMAND PALETTE OVERLAY */}
+      {isCmdOpen && (
+        <div className="cmd-palette-backdrop" onClick={() => setIsCmdOpen(false)}>
+          <div className="cmd-palette-box" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="text"
+              className="cmd-palette-input"
+              placeholder="Search actions, navigation tabs... (e.g. 'audit', 'employees')"
+              value={cmdQuery}
+              onChange={(e) => handleCmdSearch(e.target.value)}
+              autoFocus
+            />
+            <div className="cmd-palette-results">
+              {cmdResults.length > 0 ? (
+                cmdResults.map((res, idx) => (
+                  <div
+                    key={idx}
+                    className="cmd-palette-item"
+                    onClick={() => {
+                      setActiveTab(res.tab);
+                      setIsCmdOpen(false);
+                      setCmdQuery('');
+                      setCmdResults([]);
+                    }}
+                  >
+                    <span>⚡</span> {res.label}
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: '16px 20px', color: '#94a3b8', fontSize: '13.5px' }}>
+                  No navigation matching. Type 'departments', 'employees', or 'audit'.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating AI Assistant Chat Widget */}
+      <div className="ai-widget-container" style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000 }}>
+        {/* Toggle Button */}
+        <button
+          className="ai-toggle-btn"
+          style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, var(--pastel-red) 0%, var(--pastel-yellow) 100%)',
+            color: 'white',
+            border: 'none',
+            fontSize: '28px',
+            cursor: 'pointer',
+            boxShadow: '0 8px 32px rgba(15, 23, 42, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'var(--transition-smooth)'
+          }}
+          onClick={() => setIsAiOpen(!isAiOpen)}
+        >
+          {isAiOpen ? '✕' : <MessageCircle size={28} strokeWidth={1.75} />}
+        </button>
+
+        {/* Chat Drawer */}
+        {isAiOpen && (
+          <div
+            className="ai-chat-drawer"
+            style={{
+              position: 'absolute',
+              bottom: '80px',
+              right: '0',
+              width: '380px',
+              height: '500px',
+              background: '#ffffff',
+              borderRadius: '20px',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'var(--shadow-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, var(--pastel-red) 0%, var(--pastel-yellow) 100%)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}
+            >
+              <MessageCircle size={24} strokeWidth={1.75} style={{ color: 'white' }} />
+              <div>
+                <h4 style={{ margin: 0, fontWeight: '600' }}>AI Ops Assistant</h4>
+                <p style={{ margin: 0, fontSize: '10px', opacity: 0.9 }}>Claude AI Proxy Agent</p>
+              </div>
+            </div>
+
+            {/* Message Area */}
+            <div
+              style={{
+                flex: 1,
+                padding: '20px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                background: '#f8fafc'
+              }}
+            >
+              {aiMessages.map((msg, index) => (
+                <div
+                  key={index}
+                  style={{
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: '80%',
+                    padding: '12px 16px',
+                    borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    background: msg.role === 'user' ? 'var(--pastel-red)' : '#ffffff',
+                    color: msg.role === 'user' ? 'white' : 'var(--text-dark)',
+                    boxShadow: msg.role === 'user' ? 'none' : '0 2px 8px rgba(0,0,0,0.04)',
+                    border: msg.role === 'user' ? 'none' : '1px solid rgba(148, 163, 184, 0.1)',
+                    fontSize: '13px',
+                    lineHeight: '1.5',
+                    whiteSpace: 'pre-wrap'
+                  }}
+                >
+                  {msg.content}
+                </div>
+              ))}
+              {isAiTyping && (
+                <div style={{ alignSelf: 'flex-start', color: 'var(--text-muted)', fontSize: '12px', fontStyle: 'italic' }}>
+                  AI is searching SQLite database...
+                </div>
+              )}
+            </div>
+
+            {/* Input Form */}
+            <form
+              onSubmit={handleAiSubmit}
+              style={{
+                padding: '12px 16px',
+                borderTop: '1px solid var(--border-color)',
+                display: 'flex',
+                gap: '8px',
+                background: '#ffffff'
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Ask about staff, departments, roles..."
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '13px',
+                  outline: 'none'
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  background: 'var(--pastel-red)',
+                  color: 'white',
+                  border: 'none',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+
+      </main>
+    </div>
+  );
+};
+
+// Audit Logs Tab subcomponent declaration
+const AuditLogsTab = () => {
+  const [logs, setLogs] = useState([]);
+  const [search, setSearch] = useState('');
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/audit-logs', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('wfm_token')}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLogs(data.logs || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingLogs(false);
+    }
   };
 
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const filteredLogs = logs.filter(log => 
+    log.action.toLowerCase().includes(search.toLowerCase()) ||
+    (log.user_name && log.user_name.toLowerCase().includes(search.toLowerCase())) ||
+    (log.details && log.details.toLowerCase().includes(search.toLowerCase()))
+  );
+
   return (
-    <div className="dashboard-container">
-      {/* Header bar */}
-      <header className="dashboard-header">
+    <div className="auth-card" style={{ padding: '30px', maxWidth: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <h1 className="dashboard-title" style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--text-dark)' }}>
-            Welcome back, {user.name}!
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
-            🏢 {user.organization} &nbsp;|&nbsp; ✉ {user.email}
+          <h3 style={{ margin: 0, fontWeight: '700', fontSize: '18px', color: '#1e293b' }}>
+            System Audit Compliance Log
+          </h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>
+            Real-time tracking of security policies, separation events, and user logins.
           </p>
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {getRoleBadge(user.role)}
-          <button className="btn-secondary" onClick={onLogout}>
-            Sign Out
-          </button>
-        </div>
-      </header>
+        <input
+          type="text"
+          placeholder="Filter audit actions..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '8px',
+            border: '1px solid #cbd5e1',
+            fontSize: '13px',
+            width: '240px'
+          }}
+        />
+      </div>
 
-      {/* Main operational panels */}
-      <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', marginBottom: '20px', color: 'var(--text-dark)' }}>
-          Active Operations Modules
-        </h2>
-        <div className="dashboard-grid">
-          {getModules().map((mod, idx) => (
-            <div className="dashboard-card" key={idx}>
-              <h3 className="dashboard-card-title">{mod.title}</h3>
-              <p className="dashboard-card-desc">{mod.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Simulated AI Operations Assistant Section */}
-      <section style={{ 
-        background: 'var(--glass-bg)', 
-        border: '1.5px solid var(--border-color)', 
-        borderRadius: '20px', 
-        padding: '30px', 
-        boxShadow: 'var(--shadow-md)',
-        backdropFilter: 'blur(var(--glass-blur))'
-      }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', marginBottom: '10px', color: 'var(--text-dark)' }}>
-          💬 WFM AI Assistant Panel
-        </h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-          Ask questions, plan schedules, or request assistance using natural language.
-        </p>
-        
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <input 
-            type="text" 
-            className="form-control" 
-            placeholder="Type a request (e.g., 'Draft next week''s shifts' or 'Submit leave for July 5th')..." 
-            style={{ marginBottom: 0 }}
-          />
-          <button className="btn-primary" style={{ width: '120px', flexShrink: 0 }}>
-            Send
-          </button>
-        </div>
-      </section>
+      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
+              <th style={{ padding: '10px 8px' }}>Timestamp</th>
+              <th style={{ padding: '10px 8px' }}>User</th>
+              <th style={{ padding: '10px 8px' }}>Action</th>
+              <th style={{ padding: '10px 8px' }}>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredLogs.map(log => (
+              <tr key={log.id} style={{ borderBottom: '1px solid #e2e8f0', color: '#334155' }}>
+                <td style={{ padding: '10px 8px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{new Date(log.created_at).toLocaleString()}</td>
+                <td style={{ padding: '10px 8px', fontWeight: '600' }}>{log.user_name || 'System Guest'} ({log.user_email || 'N/A'})</td>
+                <td style={{ padding: '10px 8px' }}>
+                  <span style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    {log.action}
+                  </span>
+                </td>
+                <td style={{ padding: '10px 8px', color: '#475569' }}>{log.details}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

@@ -7,11 +7,14 @@
   "imports": {
     "#@/api/v1/routes/index": "./src/api/v1/routes/index.js",
     "#@/modules/auth/api/v1/routes": "./src/modules/auth/api/v1/routes.js",
+    "#@/modules/dev/api/v1/routes": "./src/modules/dev/api/v1/routes.js",
     "#@/modules/role/api/v1/routes": "./src/modules/role/api/v1/routes.js",
     "#@/modules/invite/api/v1/routes": "./src/modules/invite/api/v1/routes.js",
     "#@/modules/organization/api/v1/routes": "./src/modules/organization/api/v1/routes.js",
     "#@/modules/role-delegation/api/v1/routes": "./src/modules/role-delegation/api/v1/routes.js",
     "#@/modules/role-assignment/api/v1/routes": "./src/modules/role-assignment/api/v1/routes.js",
+    "#@/modules/email/api/v1/routes": "./src/modules/email/api/v1/routes.js",
+    "#@/modules/ai/api/v1/routes": "./src/modules/ai/api/v1/routes.js",
     "#@/core/database": "./src/core/database.js",
     "#@/core/middleware/auth": "./src/core/middleware/auth.js",
     "#@/*": "./src/*"
@@ -26,8 +29,11 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^9.0.3",
+    "pdfkit": "^0.19.1",
     "sqlite3": "^5.1.7"
   }
 }

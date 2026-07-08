@@ -2,21 +2,36 @@ import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
-import SelectTemplate from './components/SelectTemplate';
+import ResetPasswordForm from './components/ResetPasswordForm';
+import LandingPage from './components/LandingPage';
+import PersonaSelector from './components/PersonaSelector';
 
 function App() {
-  const [devView, setDevView] = useState('gallery'); // 'gallery' or 'auth'
-  const [view, setView] = useState('login'); // 'login', 'register', 'dashboard'
+  const [view, setView] = useState('landing'); // 'landing', 'personaSelect', 'login', 'register', 'dashboard', 'resetPassword'
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Validate session on mount
+  // Validate session on mount and parse password reset token links
   useEffect(() => {
     const checkSession = async () => {
+      // 1. Check if the URL query parameter directs to reset-password
+      const params = new URLSearchParams(window.location.search);
+      const urlView = params.get('view');
+      const urlToken = params.get('token');
+      const urlEmail = params.get('email');
+      
+      if (urlView === 'reset-password' && urlToken && urlEmail) {
+        setView('resetPassword');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Otherwise run standard session validation
       const token = localStorage.getItem('wfm_token');
       const savedUser = localStorage.getItem('wfm_user');
 
       if (!token || !savedUser) {
+        setView('landing');
         setLoading(false);
         return;
       }
@@ -36,9 +51,11 @@ function App() {
         } else {
           localStorage.removeItem('wfm_token');
           localStorage.removeItem('wfm_user');
+          setView('landing');
         }
       } catch (err) {
         console.error('Session validation error:', err.message);
+        setView('landing');
       } finally {
         setLoading(false);
       }
@@ -58,7 +75,7 @@ function App() {
     localStorage.removeItem('wfm_token');
     localStorage.removeItem('wfm_user');
     setUser(null);
-    setView('login');
+    setView('landing');
   };
 
   const handleRegisterSuccess = () => {
@@ -89,28 +106,32 @@ function App() {
     );
   }
 
+  // Adjust container styling based on active view (landing & personaSelect are full screen dark mode)
+  const isFullScreenView = view === 'landing' || view === 'personaSelect' || view === 'dashboard';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh' }}>
-      {/* Dev preview toggle header */}
-      <nav className="dev-navbar">
-        <button 
-          className={`dev-nav-btn ${devView === 'gallery' ? 'active' : ''}`}
-          onClick={() => setDevView('gallery')}
-        >
-          🎨 Select Template Gallery
-        </button>
-        <button 
-          className={`dev-nav-btn ${devView === 'auth' ? 'active' : ''}`}
-          onClick={() => setDevView('auth')}
-        >
-          🔐 Full-Stack WFM Auth Demo
-        </button>
-      </nav>
-
       {/* Main viewport area */}
       <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-        {devView === 'gallery' ? (
-          <SelectTemplate />
+        {isFullScreenView ? (
+          <>
+            {view === 'landing' && (
+              <LandingPage onEnter={(target) => setView(target)} />
+            )}
+            {view === 'personaSelect' && (
+              <PersonaSelector 
+                onSelect={handleLoginSuccess} 
+                onBack={() => setView('landing')} 
+                onManualLogin={() => setView('login')} 
+              />
+            )}
+            {view === 'dashboard' && user && (
+              <Dashboard 
+                user={user} 
+                onLogout={handleLogout} 
+              />
+            )}
+          </>
         ) : (
           <div className="app-container">
             {view === 'login' && (
@@ -125,10 +146,9 @@ function App() {
                 toggleView={() => setView('login')} 
               />
             )}
-            {view === 'dashboard' && user && (
-              <Dashboard 
-                user={user} 
-                onLogout={handleLogout} 
+            {view === 'resetPassword' && (
+              <ResetPasswordForm 
+                onCancel={() => setView('login')} 
               />
             )}
           </div>
