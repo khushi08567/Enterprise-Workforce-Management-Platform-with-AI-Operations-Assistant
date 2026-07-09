@@ -56,31 +56,33 @@ const LandingPage = ({ onEnter }) => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Build concentric rings of dashes
+    // Build concentric rings of dashes forming a localized soap bubble
     const buildGrid = () => {
       particles = [];
-      const ringSpacing = 28;
-      const maxRadius = Math.max(window.innerWidth, window.innerHeight) * 0.7;
+      const ringSpacing = 20;
+      const maxRadius = 280; // Limit maximum bubble radius
       const ringCount = Math.floor(maxRadius / ringSpacing);
 
       for (let r = 1; r <= ringCount; r++) {
         const radius = r * ringSpacing;
-        // Circumference proportional count
         const circumference = 2 * Math.PI * radius;
-        const dashDensity = 24; // Spacing between dashes in pixels
+        const dashDensity = 26; // Reduce number of dots by increasing spacing
         const count = Math.floor(circumference / dashDensity);
 
         for (let i = 0; i < count; i++) {
           const baseAngle = (i / count) * Math.PI * 2;
-          // Add a subtle spiral offset based on radius to twist the concentric rings
           const angleOffset = baseAngle + Math.log(radius) * 0.08;
+          
+          // Quadratic opacity falloff (fades to 0 at maxRadius, leaving the border undefined)
+          const fadeRatio = 1 - (radius / maxRadius);
+          const alpha = Math.pow(fadeRatio, 1.6) * 0.65;
 
           particles.push({
             distance: radius,
             angleOffset,
             width: Math.max(1.2, 2.2 - (radius / maxRadius) * 0.8),
             length: Math.max(2.5, 4.5 - (radius / maxRadius) * 1.5),
-            alpha: Math.max(0.1, 0.65 - (radius / maxRadius) * 0.45)
+            alpha
           });
         }
       }
@@ -100,39 +102,49 @@ const LandingPage = ({ onEnter }) => {
         targetY = mouseRef.current.y;
       }
 
-      // Smoothly glide the spiral center to match cursor
-      currentCenterRef.current.x += (targetX - currentCenterRef.current.x) * 0.08;
-      currentCenterRef.current.y += (targetY - currentCenterRef.current.y) * 0.08;
+      // Compute bubble center displacement for squishy drag inertia simulation
+      const dragX = targetX - currentCenterRef.current.x;
+      const dragY = targetY - currentCenterRef.current.y;
 
-      rotationAngle += 0.0006; // Slow, smooth rotation speed
+      // Glide center
+      currentCenterRef.current.x += dragX * 0.08;
+      currentCenterRef.current.y += dragY * 0.08;
+
+      rotationAngle += 0.0006; // Majestic slow rotation
+
+      const maxRadius = 280;
 
       particles.forEach(p => {
         const orbitAngle = p.angleOffset + rotationAngle;
         
+        // Base coordinate relative to glide center
         let baseX = currentCenterRef.current.x + Math.cos(orbitAngle) * p.distance;
         let baseY = currentCenterRef.current.y + Math.sin(orbitAngle) * p.distance;
+
+        // Apply dynamic squishy drag stretch (dashes stretch/lag based on speed of motion)
+        const stretch = p.distance / maxRadius;
+        baseX += dragX * stretch * 0.45;
+        baseY += dragY * stretch * 0.45;
 
         // Base tangent direction
         let tx = -Math.sin(orbitAngle);
         let ty = Math.cos(orbitAngle);
 
-        // Interactive mouse distortion (attraction/repulsion + direction warping)
+        // Core repulsion bubble deflection centered on actual cursor
         if (mouseRef.current.active && mouseRef.current.x !== null) {
           const dx = baseX - mouseRef.current.x;
           const dy = baseY - mouseRef.current.y;
           const mouseDist = Math.sqrt(dx * dx + dy * dy);
 
           if (mouseDist < 250) {
-            // Push particles away slightly from cursor (repulsion bubble)
-            const pushForce = ((250 - mouseDist) / 250) * 16;
+            const pushForce = ((250 - mouseDist) / 250) * 12;
             const pushAngle = Math.atan2(dy, dx);
             baseX += Math.cos(pushAngle) * pushForce;
             baseY += Math.sin(pushAngle) * pushForce;
 
-            // Blend the dash direction to wrap/flow around the cursor coordinates
             const mouseTangentX = -Math.sin(pushAngle);
             const mouseTangentY = Math.cos(pushAngle);
-            const blend = ((250 - mouseDist) / 250) * 0.65;
+            const blend = ((250 - mouseDist) / 250) * 0.55;
 
             const blendedX = tx * (1 - blend) + mouseTangentX * blend;
             const blendedY = ty * (1 - blend) + mouseTangentY * blend;
@@ -143,13 +155,10 @@ const LandingPage = ({ onEnter }) => {
           }
         }
 
-        // Map colors based on polar angle relative to screen center
-        // Shift base hue so left/top-left is warm orange-red, and right/bottom-right is cool purple-blue
+        // Map iridescent spectrum to polar angle relative to screen center
         const relativeAngle = Math.atan2(baseY - currentCenterRef.current.y, baseX - currentCenterRef.current.x);
-        const shiftedAngle = (relativeAngle + Math.PI * 0.8) % (Math.PI * 2);
+        const shiftedAngle = (relativeAngle + Math.PI * 0.85) % (Math.PI * 2);
         const hue = (shiftedAngle / (Math.PI * 2)) * 360;
-        
-        // HSL maps beautiful vibrant neon dashes
         const colorStr = `hsla(${hue}, 85%, 65%, ${p.alpha})`;
 
         // Draw the dash segment
