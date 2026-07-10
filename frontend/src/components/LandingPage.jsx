@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Shield, Users, Calendar, DollarSign, Cpu, Laptop, Ticket, Terminal, ArrowRight, Bot, Mic, Sparkles } from 'lucide-react';
+import { Shield, Users, Calendar, DollarSign, Cpu, Laptop, Ticket, Terminal, ArrowRight, Bot, Mic, Sparkles, Sun, Moon } from 'lucide-react';
 
 const LandingPage = ({ onEnter }) => {
   const [typedText, setTypedText] = useState('');
@@ -7,6 +7,16 @@ const LandingPage = ({ onEnter }) => {
   const mouseRef = useRef({ x: null, y: null, active: false });
   const consoleRef = useRef(null);
   const [logs, setLogs] = useState([]);
+
+  const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   const currentCenterRef = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
 
@@ -314,34 +324,65 @@ const LandingPage = ({ onEnter }) => {
             WORKFORCE OS
           </span>
         </div>
-        <button 
-          onClick={() => onEnter('personaSelect')}
-          style={{
-            padding: '9px 24px',
-            borderRadius: '99px',
-            backgroundColor: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            color: '#f3f4f6',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            fontSize: '13px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#6366F1';
-            e.currentTarget.style.borderColor = '#6366F1';
-            e.currentTarget.style.transform = 'translateY(-1.5px)';
-            e.currentTarget.style.boxShadow = '0 4px 15px rgba(99,102,241,0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          Sign In
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            style={{
+              padding: '9px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: '#f3f4f6',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              width: '36px',
+              height: '36px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.transform = 'translateY(-1.5px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.transform = 'none';
+            }}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDarkMode ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
+          </button>
+
+          <button 
+            onClick={() => onEnter('personaSelect')}
+            style={{
+              padding: '9px 24px',
+              borderRadius: '99px',
+              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: '#f3f4f6',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              fontSize: '13px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#6366F1';
+              e.currentTarget.style.borderColor = '#6366F1';
+              e.currentTarget.style.transform = 'translateY(-1.5px)';
+              e.currentTarget.style.boxShadow = '0 4px 15px rgba(99,102,241,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            Sign In
+          </button>
+        </div>
       </header>
 
       {/* Hero Section Container */}
