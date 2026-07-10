@@ -42,6 +42,19 @@ function App() {
     }
   }, [transitionState]);
 
+  // Initialize theme on app load before session validation to avoid flash of wrong theme
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    const isDark = stored ? (stored === 'dark') : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, []);
+
   // Validate session on mount and parse password reset token links
   useEffect(() => {
     const checkSession = async () => {

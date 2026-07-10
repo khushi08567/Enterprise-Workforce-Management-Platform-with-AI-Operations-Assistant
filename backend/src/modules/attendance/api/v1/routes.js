@@ -24,7 +24,7 @@ function getDistanceMeters(lat1, lon1, lat2, lon2) {
 // POST /api/v1/attendance/clock-in - Clock in
 router.post('/clock-in', authenticateToken, async (req, res) => {
   const { latitude, longitude, method } = req.body; // coordinates of clock-in client
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('en-CA');
 
   try {
     const emp = await dbGet('SELECT * FROM employees WHERE user_id = ?', [req.user.id]);
@@ -90,7 +90,7 @@ router.post('/clock-in', authenticateToken, async (req, res) => {
 
 // POST /api/v1/attendance/clock-out - Clock out
 router.post('/clock-out', authenticateToken, async (req, res) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('en-CA');
 
   try {
     const emp = await dbGet('SELECT * FROM employees WHERE user_id = ?', [req.user.id]);

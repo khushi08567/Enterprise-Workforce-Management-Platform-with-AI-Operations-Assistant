@@ -8,9 +8,10 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const projects = await dbAll(`
-      SELECT p.*, e.name as owner_name 
+      SELECT p.*, u.name as owner_name 
       FROM projects p
       JOIN employees e ON p.owner_id = e.id
+      JOIN users u ON e.user_id = u.id
     `);
     res.status(200).json({ projects });
   } catch (err) {
@@ -49,9 +50,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.get('/:id/tasks', authenticateToken, async (req, res) => {
   try {
     const tasks = await dbAll(`
-      SELECT t.*, e.name as assignee_name 
+      SELECT t.*, u.name as assignee_name 
       FROM tasks t
       LEFT JOIN employees e ON t.assignee_id = e.id
+      LEFT JOIN users u ON e.user_id = u.id
       WHERE t.project_id = ?
     `, [req.params.id]);
     res.status(200).json({ tasks });

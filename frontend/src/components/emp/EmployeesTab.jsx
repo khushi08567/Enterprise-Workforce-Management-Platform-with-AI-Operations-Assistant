@@ -995,8 +995,8 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
                       onChange={(e) => setWizardForm({ ...wizardForm, reportingManagerId: e.target.value })}
                     >
                       <option value="">None (Reports to CEO)</option>
-                      {usersList.map(u => (
-                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                      {employees.map(u => (
+                        <option key={u.user_id} value={u.user_id}>{u.name} ({u.email})</option>
                       ))}
                     </select>
                     <label className="form-label">Reporting Manager</label>

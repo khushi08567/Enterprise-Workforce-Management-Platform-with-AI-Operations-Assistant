@@ -432,11 +432,42 @@ db.serialize(() => {
       console.log('Employees table ready.');
       db.run("ALTER TABLE employees ADD COLUMN office_location_id INTEGER", [], (alterErr) => {});
       db.run("ALTER TABLE employees ADD COLUMN work_shift_id INTEGER", [], (alterErr) => {});
-      db.get('SELECT COUNT(*) as count FROM employees', [], (countErr, row) => {
-        if (!countErr && row.count === 0) {
-          db.run('INSERT INTO employees (user_id, employee_id, mobile, address, gender, blood_group, dob, department_id, designation_id, joining_date, reporting_manager_id, employment_type, salary_grade, salary, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            2, 'EMP1002', '+15550199', '456 Oak Ave, San Francisco', 'Female', 'O+', '1998-05-12', 2, 1, '2026-01-15', 1, 'Full-time', 'G4', 95000.0, 'Active'
-          ]);
+      db.all('SELECT * FROM users', [], (usersErr, usersList) => {
+        if (!usersErr && usersList) {
+          usersList.forEach(u => {
+            db.get('SELECT id FROM employees WHERE user_id = ?', [u.id], (checkErr, checkRow) => {
+              if (!checkErr && !checkRow) {
+                let deptId = 2; // Default Engineering
+                if (['Super Admin', 'Organization Admin', 'Auditor'].includes(u.role)) deptId = 1; // Main Corp
+                else if (u.role === 'HR Manager') deptId = 4;
+                else if (u.role === 'Finance Executive') deptId = 5;
+                else if (u.role === 'IT Administrator') deptId = 7;
+                else if (u.role === 'Intern' && u.email.includes('mkt')) deptId = 3; // Marketing Intern
+                
+                db.run(
+                  `INSERT INTO employees (user_id, employee_id, mobile, address, gender, blood_group, dob, department_id, designation_id, joining_date, reporting_manager_id, employment_type, salary_grade, salary, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    u.id, 
+                    'EMP' + (1000 + u.id), 
+                    '+155501' + String(u.id).padStart(2, '0'), 
+                    'Corporate Headquarters, CA', 
+                    'Male', 
+                    'O+', 
+                    '1992-04-18', 
+                    deptId, 
+                    1, 
+                    '2026-01-01', 
+                    1, 
+                    u.role === 'Intern' ? 'Intern' : 'Full-time', 
+                    'G3', 
+                    85000.0, 
+                    'Active'
+                  ]
+                );
+              }
+            });
+          });
         }
       });
     }

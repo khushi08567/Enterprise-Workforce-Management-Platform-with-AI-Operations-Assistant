@@ -62,7 +62,7 @@ router.post('/apply', authenticateToken, async (req, res) => {
   }
 
   // Date validation: no past dates
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('en-CA');
   if (startDate < todayStr) {
     return res.status(400).json({ error: 'Leave request start date cannot be in the past.' });
   }
@@ -170,7 +170,7 @@ router.post('/requests/:id/approve', authenticateToken, async (req, res) => {
       await dbRun(`
         INSERT INTO employee_timeline_events (employee_id, event_type, event_date, meta)
         VALUES (?, 'Leave Approved', ?, ?)
-      `, [request.employee_id, new Date().toISOString().split('T')[0], JSON.stringify({ leave_type: request.leave_type, days: diffDays })]);
+      `, [request.employee_id, new Date().toLocaleDateString('en-CA'), JSON.stringify({ leave_type: request.leave_type, days: diffDays })]);
 
     } else {
       await dbRun('UPDATE leave_requests SET status = "Rejected", approved_by = ? WHERE id = ?', [req.user.id, id]);
@@ -193,7 +193,7 @@ router.post('/requests/:id/cancel', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Leave request not found.' });
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA');
     if (request.start_date < todayStr) {
       return res.status(400).json({ error: 'Cannot cancel active or past leave schedules.' });
     }

@@ -13,14 +13,23 @@ router.get('/', authenticateToken, async (req, res) => {
     const userRole = req.user.role;
 
     // Server-side Visibility Enforced query
-    const documents = await dbAll(`
-      SELECT d.*, u.name as uploaded_by_name 
-      FROM documents d
-      JOIN users u ON d.uploaded_by = u.id
-      WHERE d.visibility = 'org-wide'
-         OR (d.visibility = 'department-specific' AND CAST(d.target_id AS INTEGER) = ?)
-         OR (d.visibility = 'role-restricted' AND d.target_id = ?)
-    `, [userDept, userRole]);
+    let documents;
+    if (userRole === 'Super Admin' || userRole === 'Organization Admin') {
+      documents = await dbAll(`
+        SELECT d.*, u.name as uploaded_by_name 
+        FROM documents d
+        JOIN users u ON d.uploaded_by = u.id
+      `);
+    } else {
+      documents = await dbAll(`
+        SELECT d.*, u.name as uploaded_by_name 
+        FROM documents d
+        JOIN users u ON d.uploaded_by = u.id
+        WHERE d.visibility = 'org-wide'
+           OR (d.visibility = 'department-specific' AND CAST(d.target_id AS INTEGER) = ?)
+           OR (d.visibility = 'role-restricted' AND d.target_id = ?)
+      `, [userDept, userRole]);
+    }
 
     res.status(200).json({ documents });
   } catch (err) {

@@ -132,11 +132,8 @@ export default function RecruitmentTab({ user, onPrefillOnboarding }) {
     e.dataTransfer.setData('text/plain', candidateId);
   };
 
-  const handleDrop = async (e, targetStatus) => {
-    e.preventDefault();
-    const candidateId = e.dataTransfer.getData('text/plain');
+  const handleMoveCandidate = async (candidateId, targetStatus) => {
     setErrorMessage('');
-    
     try {
       const res = await fetch(`${API_BASE}/recruitment/candidates/${candidateId}/status`, {
         method: 'PUT',
@@ -153,6 +150,14 @@ export default function RecruitmentTab({ user, onPrefillOnboarding }) {
       }
     } catch (err) {
       setErrorMessage('Failed to perform stage transition.');
+    }
+  };
+
+  const handleDrop = async (e, targetStatus) => {
+    e.preventDefault();
+    const candidateId = e.dataTransfer.getData('text/plain');
+    if (candidateId) {
+      await handleMoveCandidate(candidateId, targetStatus);
     }
   };
 
@@ -392,7 +397,7 @@ export default function RecruitmentTab({ user, onPrefillOnboarding }) {
                       </div>
 
                       {/* Interactive Triggers */}
-                      <div style={{ display: 'flex', gap: '6px', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                      <div style={{ display: 'flex', gap: '6px', borderTop: '1px solid #f1f5f9', paddingTop: '8px', alignItems: 'center' }}>
                         {cand.status !== 'Applied' && (
                           <button
                             title="Schedule Interview"
@@ -411,6 +416,24 @@ export default function RecruitmentTab({ user, onPrefillOnboarding }) {
                             <FileText size={14} />
                           </button>
                         )}
+                        <select
+                          value={cand.status}
+                          onChange={(e) => handleMoveCandidate(cand.id, e.target.value)}
+                          style={{
+                            fontSize: '11px',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                            border: '1px solid #cbd5e1',
+                            background: '#ffffff',
+                            color: '#334155',
+                            cursor: 'pointer',
+                            marginLeft: 'auto'
+                          }}
+                        >
+                          {kanbanColumns.map(colName => (
+                            <option key={colName} value={colName}>{colName}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   ))}

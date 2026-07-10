@@ -231,7 +231,7 @@ const DepartmentShowcase = ({ onBack, onManualLogin, transitionStage }) => {
                 fontSize: '28px',
                 fontWeight: '900',
                 letterSpacing: '2px',
-                background: 'linear-gradient(to right, #ffffff, #94a3b8)',
+                background: isDarkMode ? 'linear-gradient(to right, #ffffff, #94a3b8)' : 'linear-gradient(to right, #0f172a, #475569)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>

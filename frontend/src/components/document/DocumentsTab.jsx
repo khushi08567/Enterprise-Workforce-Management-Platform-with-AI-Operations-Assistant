@@ -11,6 +11,8 @@ export default function DocumentsTab({ user }) {
   // Forms
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDoc, setNewDoc] = useState({ title: '', category: 'Policy', fileUrl: '', visibility: 'org-wide', targetId: '' });
+  const [departments, setDepartments] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   const [showVersionForm, setShowVersionForm] = useState(false);
   const [newVersionFile, setNewVersionFile] = useState('');
@@ -50,8 +52,26 @@ export default function DocumentsTab({ user }) {
     }
   };
 
+  const fetchFiltersData = async () => {
+    try {
+      const resD = await fetch(`${API_BASE}/organizations`, { headers: getHeaders() });
+      if (resD.ok) {
+        const data = await resD.json();
+        setDepartments(data.organizations || []);
+      }
+      const resR = await fetch(`${API_BASE}/roles`, { headers: getHeaders() });
+      if (resR.ok) {
+        const data = await resR.json();
+        setRoles(data.roles || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch filters data:', err);
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
+    fetchFiltersData();
   }, []);
 
   const handlePublishDoc = async (e) => {
@@ -270,14 +290,37 @@ export default function DocumentsTab({ user }) {
                 <option value="department-specific">Department Specific</option>
                 <option value="role-restricted">Role Restricted</option>
               </select>
-              {(newDoc.visibility === 'department-specific' || newDoc.visibility === 'role-restricted') && (
-                <input
-                  type="text"
-                  placeholder={newDoc.visibility === 'department-specific' ? 'Target Department ID' : 'Target Role Name'}
+              {newDoc.visibility === 'department-specific' && (
+                <select
+                  required
                   value={newDoc.targetId}
                   onChange={(e) => setNewDoc({ ...newDoc, targetId: e.target.value })}
                   style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                />
+                >
+                  <option value="">-- Select Department --</option>
+                  {departments.map(dept => (
+                    <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>
+                  ))}
+                </select>
+              )}
+              {newDoc.visibility === 'role-restricted' && (
+                <select
+                  required
+                  value={newDoc.targetId}
+                  onChange={(e) => setNewDoc({ ...newDoc, targetId: e.target.value })}
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                >
+                  <option value="">-- Select Role --</option>
+                  {roles.length > 0 ? (
+                    roles.map(r => (
+                      <option key={r.id || r.name} value={r.name}>{r.name}</option>
+                    ))
+                  ) : (
+                    ['Super Admin', 'Organization Admin', 'HR Manager', 'Finance Executive', 'IT Administrator', 'Department Manager', 'Team Lead', 'Employee', 'Intern', 'Auditor'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))
+                  )}
+                </select>
               )}
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>

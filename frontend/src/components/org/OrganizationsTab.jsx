@@ -137,14 +137,25 @@ const OrganizationsTab = ({ user }) => {
       const resEmp = await fetch(`${API_BASE}/employees?limit=200`, { headers: getHeaders() });
       if (resEmp.ok) {
         const data = await resEmp.json();
-        setEmployees(data.employees || []);
+        const empList = data.employees || [];
+        setEmployees(empList);
+        
+        // Extract users from the employees list to use as manager options
+        const usersFromEmployees = empList.map(e => ({
+          id: e.user_id,
+          name: e.name,
+          email: e.email
+        }));
+        setUsersList(usersFromEmployees);
       }
       const resUsers = await fetch(`${API_BASE}/auth/logs`, { headers: getHeaders() }).catch(() => null); 
       // fallback to custom retrieval or query logs if direct list is blocked
       const resAlt = await fetch(`${API_BASE}/dev/metrics`, { headers: getHeaders() });
       if (resAlt.ok) {
         const met = await resAlt.json();
-        setUsersList(met.stats?.users || []);
+        if (met.stats?.users && met.stats.users.length > 0) {
+          setUsersList(met.stats.users);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -204,6 +215,12 @@ const OrganizationsTab = ({ user }) => {
       if (res.ok) {
         triggerMessage('success', editingDept ? 'Department updated successfully!' : 'Department created successfully!');
         fetchDepartments();
+        
+        // Auto-expand parent node for the newly added child department so it immediately appears
+        if (!editingDept && body.parentId) {
+          setExpandedNodes(prev => ({ ...prev, [body.parentId]: true }));
+        }
+        
         setShowAddDept(false);
         setEditingDept(null);
         setDeptForm({ name: '', code: '', parentId: '', managerId: '', status: 'Active' });
@@ -441,7 +458,10 @@ const OrganizationsTab = ({ user }) => {
 
                 <div 
                   className="tree-node-content"
-                  onClick={() => setSelectedNodeId(child.id)}
+                  onClick={() => {
+                    setSelectedNodeId(child.id);
+                    setExpandedNodes(prev => ({ ...prev, [child.id]: !prev[child.id] }));
+                  }}
                   style={{
                     cursor: 'pointer',
                     borderColor: isSelected ? '#2563eb' : 'rgba(74, 46, 42, 0.08)',
@@ -751,7 +771,10 @@ const OrganizationsTab = ({ user }) => {
 
                           <div 
                             className="tree-node-content tree-root-node"
-                            onClick={() => setSelectedNodeId(root.id)}
+                            onClick={() => {
+                              setSelectedNodeId(root.id);
+                              setExpandedNodes(prev => ({ ...prev, [root.id]: !prev[root.id] }));
+                            }}
                             style={{
                               cursor: 'pointer',
                               borderColor: isSelected ? '#2563eb' : 'rgba(74, 46, 42, 0.12)',

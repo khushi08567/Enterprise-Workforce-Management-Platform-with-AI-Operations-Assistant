@@ -22,9 +22,10 @@ router.get('/my', authenticateToken, async (req, res) => {
 router.get('/', authenticateToken, async (req, res) => {
   const { type, status } = req.query;
   let sql = `
-    SELECT a.*, e.name as assignee_name 
+    SELECT a.*, u.name as assignee_name 
     FROM assets a
     LEFT JOIN employees e ON a.assigned_to = e.id
+    LEFT JOIN users u ON e.user_id = u.id
     WHERE 1=1
   `;
   const params = [];
@@ -134,9 +135,10 @@ router.post('/:id/repair', authenticateToken, async (req, res) => {
 router.get('/:id/history', authenticateToken, async (req, res) => {
   try {
     const history = await dbAll(`
-      SELECT h.*, e.name as employee_name 
+      SELECT h.*, u.name as employee_name 
       FROM asset_history h
       LEFT JOIN employees e ON h.employee_id = e.id
+      LEFT JOIN users u ON e.user_id = u.id
       WHERE h.asset_id = ?
       ORDER BY h.created_at DESC
     `, [req.params.id]);
