@@ -578,32 +578,32 @@ const LandingPage = ({ onEnter }) => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', padding: '32px', borderRadius: '16px', transition: 'all 0.3s' }}>
+            <div style={{ background: 'var(--lp-card-bg)', border: '1px solid var(--lp-card-border)', padding: '32px', borderRadius: '16px', transition: 'all 0.3s' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifySelf: 'start', justifyContent: 'center', color: '#6366F1', marginBottom: '20px' }}>
                 <Shield size={20} />
               </div>
-              <h4 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginBottom: '12px' }}>Role-Based Cryptographic Access</h4>
-              <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.6' }}>
+              <h4 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--lp-text-primary)', marginBottom: '12px' }}>Role-Based Cryptographic Access</h4>
+              <p style={{ color: 'var(--lp-text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
                 State-checked logins and token validations prevent unauthorized access across recruitment channels, internal files, and pay ledgers.
               </p>
             </div>
 
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', padding: '32px', borderRadius: '16px', transition: 'all 0.3s' }}>
+            <div style={{ background: 'var(--lp-card-bg)', border: '1px solid var(--lp-card-border)', padding: '32px', borderRadius: '16px', transition: 'all 0.3s' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(168, 85, 247, 0.1)', display: 'flex', alignItems: 'center', justifySelf: 'start', justifyContent: 'center', color: '#a855f7', marginBottom: '20px' }}>
                 <Cpu size={20} />
               </div>
-              <h4 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginBottom: '12px' }}>Real-time Operations Engine</h4>
-              <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.6' }}>
+              <h4 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--lp-text-primary)', marginBottom: '12px' }}>Real-time Operations Engine</h4>
+              <p style={{ color: 'var(--lp-text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
                 A highly optimized backend stack provides sub-millisecond query compilations to serve telemetry, shifts, and corporate records immediately.
               </p>
             </div>
 
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', padding: '32px', borderRadius: '16px', transition: 'all 0.3s' }}>
+            <div style={{ background: 'var(--lp-card-bg)', border: '1px solid var(--lp-card-border)', padding: '32px', borderRadius: '16px', transition: 'all 0.3s' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifySelf: 'start', justifyContent: 'center', color: '#22c55e', marginBottom: '20px' }}>
                 <Sparkles size={20} />
               </div>
-              <h4 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginBottom: '12px' }}>Contextual AI Operations</h4>
-              <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.6' }}>
+              <h4 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--lp-text-primary)', marginBottom: '12px' }}>Contextual AI Operations</h4>
+              <p style={{ color: 'var(--lp-text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
                 Rachel AI integrates deeply with SQLite schema to map human voice commands directly to structural data responses and navigation redirects.
               </p>
             </div>
@@ -612,14 +612,14 @@ const LandingPage = ({ onEnter }) => {
       </section>
 
       {/* Features Section */}
-      <section style={{ padding: '100px 40px', zIndex: 10, borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+      <section style={{ padding: '100px 40px', zIndex: 10, borderTop: '1px solid var(--lp-border)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6366F1', textTransform: 'uppercase', letterSpacing: '2px' }}>INTEGRATED ARCHITECTURE</span>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: '#ffffff' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--lp-accent)', textTransform: 'uppercase', letterSpacing: '2px' }}>INTEGRATED ARCHITECTURE</span>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: 'var(--lp-text-primary)' }}>
               Modular Workforce Components
             </h3>
-            <p style={{ color: '#9ca3af', fontSize: '15px', maxWidth: '600px', margin: '12px auto 0 auto', lineHeight: '1.6' }}>
+            <p style={{ color: 'var(--lp-text-secondary)', fontSize: '15px', maxWidth: '600px', margin: '12px auto 0 auto', lineHeight: '1.6' }}>
               Every operational panel operates asynchronously but syncs with the unified core database registry.
             </p>
           </div>
@@ -636,18 +636,18 @@ const LandingPage = ({ onEnter }) => {
               <div 
                 key={i}
                 style={{ 
-                  background: 'rgba(255,255,255,0.01)', 
-                  border: '1px solid rgba(255,255,255,0.03)', 
+                  background: 'var(--lp-card-bg)', 
+                  border: '1px solid var(--lp-card-border)', 
                   borderRadius: '12px', 
                   padding: '24px',
                   display: 'flex',
                   gap: '16px'
                 }}
               >
-                <div style={{ color: '#6366F1', marginTop: '3px' }}>{f.icon}</div>
+                <div style={{ color: 'var(--lp-accent)', marginTop: '3px' }}>{f.icon}</div>
                 <div>
-                  <h5 style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '6px' }}>{f.title}</h5>
-                  <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.5' }}>{f.desc}</p>
+                  <h5 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--lp-text-primary)', marginBottom: '6px' }}>{f.title}</h5>
+                  <p style={{ color: 'var(--lp-text-secondary)', fontSize: '13px', lineHeight: '1.5' }}>{f.desc}</p>
                 </div>
               </div>
             ))}
@@ -656,15 +656,15 @@ const LandingPage = ({ onEnter }) => {
       </section>
 
       {/* AI Assistant Rachel Showcase */}
-      <section style={{ padding: '100px 40px', background: 'rgba(3, 7, 18, 0.4)', zIndex: 10, borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+      <section style={{ padding: '100px 40px', background: 'var(--lp-section-bg)', zIndex: 10, borderTop: '1px solid var(--lp-border)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'row', gap: '60px', alignItems: 'center', flexWrap: 'wrap' }}>
           
           <div style={{ flex: '1 1 450px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6366F1', textTransform: 'uppercase', letterSpacing: '2px' }}>AI DELEGATION GATEWAY</span>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: '#ffffff', lineHeight: '1.2' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--lp-accent)', textTransform: 'uppercase', letterSpacing: '2px' }}>AI DELEGATION GATEWAY</span>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: 'var(--lp-text-primary)', lineHeight: '1.2' }}>
               Meet Rachel: The Operations AI
             </h3>
-            <p style={{ color: '#9ca3af', fontSize: '15px', marginTop: '16px', lineHeight: '1.6' }}>
+            <p style={{ color: 'var(--lp-text-secondary)', fontSize: '15px', marginTop: '16px', lineHeight: '1.6' }}>
               Syncra comes equipped with an intelligent operations assistant named **Rachel**. She is connected directly to backend services, allowing managers to request complex organizational data and navigate views via typing or hands-free voice query.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
@@ -673,8 +673,8 @@ const LandingPage = ({ onEnter }) => {
                 "📊 Direct Database Compilation: Runs analytical tables mapping users, payroll, and tasks.",
                 "🧭 Dynamic Sidebar Navigation: Swap tabs (e.g. attendance clock) simply by requesting it."
               ].map((cap, i) => (
-                <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '13.5px', color: '#e5e7eb', alignItems: 'center' }}>
-                  <span style={{ color: '#6366F1', fontWeight: 'bold' }}>✓</span>
+                <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '13.5px', color: 'var(--lp-text-primary)', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--lp-accent)', fontWeight: 'bold' }}>✓</span>
                   <span>{cap}</span>
                 </div>
               ))}
@@ -683,9 +683,9 @@ const LandingPage = ({ onEnter }) => {
 
           <div style={{ flex: '1 1 400px', display: 'flex', justifyContent: 'center' }}>
             {/* Simulated Chat Interface */}
-            <div style={{ width: '100%', maxWidth: '400px', borderRadius: '16px', border: '1px solid rgba(99, 102, 241, 0.15)', background: 'rgba(15, 23, 42, 0.8)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            <div style={{ width: '100%', maxWidth: '400px', borderRadius: '16px', border: '1px solid var(--lp-console-border)', background: 'var(--lp-console-bg)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
               
-              <div style={{ padding: '16px', background: 'linear-gradient(135deg, #6366F1, #818CF8)', color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ padding: '16px', background: 'var(--lp-accent-gradient)', color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Bot size={20} />
                 <div>
                   <div style={{ fontSize: '13.5px', fontWeight: 'bold' }}>Rachel</div>
@@ -695,17 +695,17 @@ const LandingPage = ({ onEnter }) => {
 
               <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {/* User query */}
-                <div style={{ alignSelf: 'flex-end', background: '#6366F1', color: 'white', padding: '10px 14px', borderRadius: '12px 12px 0 12px', fontSize: '12.5px', maxWidth: '80%' }}>
+                <div style={{ alignSelf: 'flex-end', background: 'var(--lp-accent)', color: 'white', padding: '10px 14px', borderRadius: '12px 12px 0 12px', fontSize: '12.5px', maxWidth: '80%' }}>
                   show payroll costs for this month
                 </div>
 
                 {/* Assistant response */}
-                <div style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#f3f4f6', padding: '12px 14px', borderRadius: '12px 12px 12px 0', fontSize: '12px', maxWidth: '85%' }}>
-                  <div style={{ color: '#818CF8', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginBottom: '6px' }}>💵 PAYROLL SUMMARY</div>
+                <div style={{ alignSelf: 'flex-start', background: 'var(--lp-btn-secondary-bg)', border: '1px solid var(--lp-btn-secondary-border)', color: 'var(--lp-text-primary)', padding: '12px 14px', borderRadius: '12px 12px 12px 0', fontSize: '12px', maxWidth: '85%' }}>
+                  <div style={{ color: 'var(--lp-badge-text)', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginBottom: '6px' }}>💵 PAYROLL SUMMARY</div>
                   I compiled the payroll ledger. Basic salary total: **$48,500** with **$9,800** in tax deductions.
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px', fontSize: '11px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px', fontSize: '11px', border: '1px solid var(--lp-border)' }}>
                     <thead>
-                      <tr style={{ background: 'rgba(255,255,255,0.05)', fontWeight: 'bold' }}>
+                      <tr style={{ background: 'var(--lp-btn-secondary-hover-bg)', fontWeight: 'bold' }}>
                         <th style={{ padding: '4px', textAlign: 'left' }}>Gross</th>
                         <th style={{ padding: '4px', textAlign: 'left' }}>Tax</th>
                         <th style={{ padding: '4px', textAlign: 'left' }}>Net Total</th>
@@ -722,11 +722,11 @@ const LandingPage = ({ onEnter }) => {
                 </div>
 
                 {/* Input indicator */}
-                <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '14px', alignItems: 'center' }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#EF4444', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)' }}>
+                <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--lp-border)', paddingTop: '14px', alignItems: 'center' }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#EF4444', color: 'white', display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center', fontSize: '12px', boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)' }}>
                     <Mic size={14} />
                   </div>
-                  <div style={{ flex: 1, height: '32px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', padding: '0 12px', display: 'flex', alignItems: 'center', fontSize: '11.5px', color: '#9ca3af' }}>
+                  <div style={{ flex: 1, height: '32px', borderRadius: '16px', background: 'var(--lp-btn-secondary-bg)', border: '1px solid var(--lp-btn-secondary-border)', padding: '0 12px', display: 'flex', alignItems: 'center', fontSize: '11.5px', color: 'var(--lp-text-secondary)' }}>
                     Listening... Speak now!
                   </div>
                 </div>
@@ -805,8 +805,8 @@ const LandingPage = ({ onEnter }) => {
       <footer style={{
         width: '100%',
         padding: '60px 40px 30px 40px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.03)',
-        background: 'rgba(3, 7, 18, 0.8)',
+        borderTop: '1px solid var(--lp-border)',
+        background: 'var(--lp-header-bg)',
         zIndex: 10,
         display: 'flex',
         flexDirection: 'column',
@@ -815,38 +815,38 @@ const LandingPage = ({ onEnter }) => {
         <div style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '30px' }}>
           
           <div style={{ maxWidth: '300px' }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '1px', color: '#ffffff', display: 'block', marginBottom: '12px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '1px', color: 'var(--lp-text-primary)', display: 'block', marginBottom: '12px' }}>
               WORKFORCE OS
             </span>
-            <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.6' }}>
+            <p style={{ color: 'var(--lp-text-secondary)', fontSize: '13px', lineHeight: '1.6' }}>
               A secure, decentralized operational kernel for comprehensive enterprise staffing, analytics accounting, assets, and AI delegation.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '60px', flexWrap: 'wrap' }}>
             <div>
-              <h6 style={{ color: '#ffffff', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>SYSTEM GATEWAYS</h6>
+              <h6 style={{ color: 'var(--lp-text-primary)', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>SYSTEM GATEWAYS</h6>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-                <li><a onClick={() => onEnter('personaSelect')} style={{ color: '#9ca3af', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='#6366F1'} onMouseLeave={(e)=>e.currentTarget.style.color='#9ca3af'}>Initialize Access Sequence</a></li>
-                <li><a onClick={() => onEnter('personaSelect')} style={{ color: '#9ca3af', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='#6366F1'} onMouseLeave={(e)=>e.currentTarget.style.color='#9ca3af'}>Sign In to Dashboard</a></li>
-                <li><a onClick={handleScrollToConsole} style={{ color: '#9ca3af', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='#6366F1'} onMouseLeave={(e)=>e.currentTarget.style.color='#9ca3af'}>Telemetry Auditor</a></li>
+                <li><a onClick={() => onEnter('personaSelect')} style={{ color: 'var(--lp-text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='var(--lp-accent)'} onMouseLeave={(e)=>e.currentTarget.style.color='var(--lp-text-secondary)'}>Initialize Access Sequence</a></li>
+                <li><a onClick={() => onEnter('personaSelect')} style={{ color: 'var(--lp-text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='var(--lp-accent)'} onMouseLeave={(e)=>e.currentTarget.style.color='var(--lp-text-secondary)'}>Sign In to Dashboard</a></li>
+                <li><a onClick={handleScrollToConsole} style={{ color: 'var(--lp-text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='var(--lp-accent)'} onMouseLeave={(e)=>e.currentTarget.style.color='var(--lp-text-secondary)'}>Telemetry Auditor</a></li>
               </ul>
             </div>
             
             <div>
-              <h6 style={{ color: '#ffffff', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>PLATFORM MODULES</h6>
+              <h6 style={{ color: 'var(--lp-text-primary)', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>PLATFORM MODULES</h6>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-                <li><span style={{ color: '#9ca3af' }}>AI Operations (Rachel)</span></li>
-                <li><span style={{ color: '#9ca3af' }}>Remuneration Ledger</span></li>
-                <li><span style={{ color: '#9ca3af' }}>Attendance Audit</span></li>
-                <li><span style={{ color: '#9ca3af' }}>Leave Tracker</span></li>
+                <li><span style={{ color: 'var(--lp-text-secondary)' }}>AI Operations (Rachel)</span></li>
+                <li><span style={{ color: 'var(--lp-text-secondary)' }}>Remuneration Ledger</span></li>
+                <li><span style={{ color: 'var(--lp-text-secondary)' }}>Attendance Audit</span></li>
+                <li><span style={{ color: 'var(--lp-text-secondary)' }}>Leave Tracker</span></li>
               </ul>
             </div>
           </div>
 
         </div>
 
-        <div style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', fontSize: '12.5px', color: '#9ca3af' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', borderTop: '1px solid var(--lp-border)', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', fontSize: '12.5px', color: 'var(--lp-text-secondary)' }}>
           <span>© 2026 Syncra Enterprise. All Rights Reserved. Built under license OS-Kernel-1.0.4.</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#22c55e' }}>
             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
