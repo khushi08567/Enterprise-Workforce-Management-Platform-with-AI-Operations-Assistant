@@ -72,7 +72,18 @@ router.post('/query', authenticateToken, async (req, res) => {
                          navQuery === 'asset inventory' ||
                          navQuery === 'assets' ||
                          navQuery === 'help desk tickets' ||
-                         navQuery === 'tickets';
+                         navQuery === 'tickets' ||
+                         navQuery === 'policy documents' ||
+                         navQuery === 'documents' ||
+                         navQuery === 'reports and analytics' ||
+                         navQuery === 'reports' ||
+                         navQuery === 'role manager' ||
+                         navQuery === 'roles' ||
+                         navQuery === 'temporary delegations' ||
+                         navQuery === 'delegations' ||
+                         navQuery === 'email simulator' ||
+                         navQuery === 'email logs' ||
+                         navQuery === 'emails';
                          
     if (isNavCommand) {
       if (navQuery.includes('attendance') || navQuery.includes('clock') || navQuery.includes('checkin') || navQuery.includes('timecard')) {
@@ -101,6 +112,16 @@ router.post('/query', authenticateToken, async (req, res) => {
         navigationTab = 'performance';
       } else if (navQuery.includes('ticket') || navQuery.includes('support') || navQuery.includes('helpdesk') || navQuery.includes('help desk')) {
         navigationTab = 'tickets';
+      } else if (navQuery.includes('document') || navQuery.includes('policy') || navQuery.includes('policies') || navQuery.includes('handbook')) {
+        navigationTab = 'documents';
+      } else if (navQuery.includes('report') || navQuery.includes('analytic') || navQuery.includes('stat')) {
+        navigationTab = 'reports';
+      } else if (navQuery.includes('role') || navQuery.includes('permission') || navQuery.includes('access control')) {
+        navigationTab = 'roles';
+      } else if (navQuery.includes('delegation') || navQuery.includes('delegate')) {
+        navigationTab = 'delegations';
+      } else if (navQuery.includes('email') || navQuery.includes('mail') || navQuery.includes('smtp') || navQuery.includes('message')) {
+        navigationTab = 'emailLogs';
       } else {
         const dbDepts = await dbAll("SELECT name FROM organizations");
         const matchesDept = dbDepts.some(d => navQuery.includes(d.name.toLowerCase()));
@@ -521,11 +542,18 @@ router.post('/query', authenticateToken, async (req, res) => {
     const departmentKeywords = ['department', 'organization', 'division', 'dept', 'office', 'branch', 'structure', 'tree', 'corporate'];
     const shiftKeywords = ['shift', 'schedule', 'timetable', 'timing', 'hours', 'clock-in', 'rota'];
     const holidayKeywords = ['holiday', 'festive', 'calendar', 'vacation day', 'off day', 'celebration'];
+    const roleKeywords = ['role', 'permission', 'matrix', 'access level', 'privilege'];
+    const delegationKeywords = ['delegation', 'delegate', 'temporary access', 'handover'];
+    const emailKeywords = ['email log', 'smtp', 'email simulator', 'message logs', 'emails sent'];
+    const reportKeywords = ['report', 'metrics', 'stats', 'telemetry summary', 'analytic reports'];
+    const auditKeywords = ['audit log', 'audit logs', 'compliance log', 'compliance events', 'system logs'];
+    const insightKeywords = ['insights', 'workforce insights', 'risk profiles', 'turnover risk', 'attrition'];
     const greetings = ['hello', 'hi', 'hey', 'greetings', 'yo', 'sup', 'morning', 'afternoon'];
     const capabilityKeywords = ['what can you do', 'help', 'features', 'capabilities', 'how to use', 'guide', 'instructions', 'help me'];
 
     // 2. Intent parsing & dynamic database search tools
     if (matchKeywords(userQuery, docKeywords)) {
+      navigationTab = 'documents';
       // Document Search (M-12) with server-side visibility restrictions
       const emp = await dbGet('SELECT department_id FROM employees WHERE user_id = ?', [req.user.id]);
       const userDept = emp ? emp.department_id : null;
@@ -550,6 +578,7 @@ ${docs.map(d => `| ${d.title} | ${d.category} | ${d.version} | ${d.visibility} |
       isTable = true;
     } 
     else if (matchKeywords(userQuery, payrollKeywords)) {
+      navigationTab = 'payroll';
       // Payroll Explainer (M-07) - RBAC checked
       let payrollData = [];
       if (req.user.role === 'Admin' || req.user.role === 'Super Admin' || req.user.role === 'HR') {
@@ -576,6 +605,7 @@ ${payrollData.map(p => `| ${p.employee_name || 'Personal'} | ${p.month} | $${p.b
       isTable = true;
     } 
     else if (matchKeywords(userQuery, attendanceKeywords)) {
+      navigationTab = 'attendance';
       // Attendance (M-05) summary
       const attendance = await dbAll(`
         SELECT a.date, a.status, u.name as employee_name 
@@ -594,6 +624,7 @@ ${attendance.map(a => `| ${a.date} | ${a.employee_name} | ${a.status} |`).join('
       isTable = true;
     } 
     else if (matchKeywords(userQuery, leaveKeywords)) {
+      navigationTab = 'leave';
       // Leave Assistant (M-06)
       const leaves = await dbAll(`
         SELECT lr.*, u.name as employee_name 
@@ -612,6 +643,7 @@ ${leaves.map(l => `| ${l.employee_name} | ${l.leave_type} | ${l.start_date} to $
       isTable = true;
     } 
     else if (matchKeywords(userQuery, taskKeywords)) {
+      navigationTab = 'projects';
       // Projects (M-09)
       const tasksList = await dbAll(`
         SELECT t.title, t.status, t.priority, u.name as assignee_name 
@@ -630,6 +662,7 @@ ${tasksList.map(t => `| ${t.title} | ${t.assignee_name || 'Unassigned'} | ${t.st
       isTable = true;
     } 
     else if (matchKeywords(userQuery, assetKeywords)) {
+      navigationTab = 'assets';
       // Assets (M-10)
       const assets = await dbAll(`
         SELECT a.name, a.asset_tag, a.status, u.name as assignee_name 
@@ -648,6 +681,7 @@ ${assets.map(a => `| ${a.name} | ${a.asset_tag} | ${a.status} | ${a.assignee_nam
       isTable = true;
     } 
     else if (matchKeywords(userQuery, ticketKeywords)) {
+      navigationTab = 'tickets';
       // Help Desk (M-11)
       const tickets = await dbAll(`
         SELECT t.subject, t.category, t.priority, t.status, u.name as raised_by_name 
@@ -665,6 +699,7 @@ ${tickets.map(t => `| ${t.subject} | ${t.category} | ${t.priority} | ${t.raised_
       isTable = true;
     }
     else if (matchKeywords(userQuery, employeeKeywords)) {
+      navigationTab = 'employees';
       // Check if they are asking for a count/total of employees
       const isCountQuery = userQuery.includes('how many') || userQuery.includes('count') || userQuery.includes('total') || userQuery.includes('number of');
       
@@ -714,6 +749,7 @@ ${employees.map(e => `| ${e.name} | ${e.email} | ${e.department_name || 'N/A'} |
       }
     }
     else if (matchKeywords(userQuery, departmentKeywords)) {
+      navigationTab = 'organizations';
       const depts = await dbAll(`
         SELECT name, code, status 
         FROM organizations 
@@ -730,6 +766,7 @@ ${depts.map(d => `| ${d.name} | ${d.code || 'N/A'} | ${d.status} |`).join('\n')}
       isTable = true;
     }
     else if (matchKeywords(userQuery, shiftKeywords)) {
+      navigationTab = 'attendance';
       const shifts = await dbAll(`
         SELECT name, start_time, end_time, status 
         FROM work_shifts 
@@ -746,6 +783,7 @@ ${shifts.map(s => `| ${s.name} | ${s.start_time} | ${s.end_time} | ${s.status} |
       isTable = true;
     }
     else if (matchKeywords(userQuery, holidayKeywords)) {
+      navigationTab = 'leave';
       const holidays = await dbAll(`
         SELECT name, date, description 
         FROM holidays 
@@ -761,6 +799,101 @@ Here are the official public and company holidays:
 ${holidays.map(h => `| ${h.name} | ${h.date} | ${h.description || 'Company Holiday'} |`).join('\n')}
       `.trim();
       isTable = true;
+    }
+    else if (matchKeywords(userQuery, roleKeywords)) {
+      const rolesList = await dbAll('SELECT name, level, permissions FROM roles');
+      contextData = `
+### 🛡️ System Roles & Permissions Matrix
+| Role Name | Access Level | Configured Permissions |
+| :--- | :--- | :--- |
+${rolesList.map(r => `| ${r.name} | Lvl ${r.level} | ${JSON.parse(r.permissions).join(', ') || 'None'} |`).join('\n')}
+      `.trim();
+      isTable = true;
+      navigationTab = 'roles';
+    }
+    else if (matchKeywords(userQuery, delegationKeywords)) {
+      const delegations = await dbAll(`
+        SELECT rd.id, u1.name as delegator, u2.name as delegatee, rd.role_name, rd.start_date, rd.end_date, rd.status 
+        FROM role_delegations rd 
+        JOIN users u1 ON rd.delegate_from_id = u1.id 
+        JOIN users u2 ON rd.delegate_to_id = u2.id 
+        LIMIT 10
+      `);
+      contextData = `
+### 📋 Temporary Role Delegations
+| Delegator | Delegatee | Assigned Role | Period | Status |
+| :--- | :--- | :--- | :--- | :--- |
+${delegations.map(d => `| ${d.delegator} | ${d.delegatee} | ${d.role_name} | ${d.start_date} to ${d.end_date} | ${d.status} |`).join('\n')}
+      `.trim();
+      isTable = true;
+      navigationTab = 'delegations';
+    }
+    else if (matchKeywords(userQuery, emailKeywords)) {
+      const emails = await dbAll('SELECT to_email, subject, status, created_at FROM email_logs ORDER BY created_at DESC LIMIT 10');
+      contextData = `
+### ✉️ System Simulated Email Logs
+| Recipient | Subject | Status | Timestamp |
+| :--- | :--- | :--- | :--- |
+${emails.map(e => `| ${e.to_email} | ${e.subject} | ${e.status} | ${e.created_at} |`).join('\n')}
+      `.trim();
+      isTable = true;
+      navigationTab = 'emailLogs';
+    }
+    else if (matchKeywords(userQuery, reportKeywords)) {
+      const empCount = await dbGet("SELECT COUNT(*) as count FROM employees");
+      const pendingLeaves = await dbGet("SELECT COUNT(*) as count FROM leave_requests WHERE status = 'Pending'");
+      const openTickets = await dbGet("SELECT COUNT(*) as count FROM tickets WHERE status != 'Closed'");
+      const totalAssets = await dbGet("SELECT COUNT(*) as count FROM assets");
+      
+      contextData = `
+### 📊 System Telemetry & Workforce Reports
+Here are the current core metrics compiled from database registers:
+
+| Operational Metric | Current Count | Category |
+| :--- | :--- | :--- |
+| Registered Staff Directory | ${empCount?.count || 0} employees | Human Capital |
+| Awaiting Leave Approvals | ${pendingLeaves?.count || 0} requests | Leave Pipeline |
+| Open IT Support Tickets | ${openTickets?.count || 0} tickets | IT Help Desk |
+| Tracked Devices Custody | ${totalAssets?.count || 0} assets | Hardware Assets |
+      `.trim();
+      isTable = true;
+      navigationTab = 'reports';
+    }
+    else if (matchKeywords(userQuery, auditKeywords)) {
+      const logs = await dbAll(`
+        SELECT al.id, u.name as actor, al.action, al.category, al.details, al.created_at 
+        FROM audit_logs al 
+        LEFT JOIN users u ON al.user_id = u.id 
+        ORDER BY al.created_at DESC 
+        LIMIT 10
+      `);
+      contextData = `
+### 🛡️ System Audit Logs & Compliance Registry
+| ID | User / Actor | Action | Module / Category | Timestamp |
+| :--- | :--- | :--- | :--- | :--- |
+${logs.map(l => `| #${l.id} | ${l.actor || 'System'} | ${l.action} | ${l.category} | ${l.created_at} |`).join('\n')}
+      `.trim();
+      isTable = true;
+      navigationTab = 'auditLogs';
+    }
+    else if (matchKeywords(userQuery, insightKeywords)) {
+      const risks = await dbAll(`
+        SELECT u.name as employee_name, erp.risk_score, erp.risk_factors 
+        FROM employee_risk_profiles erp 
+        JOIN employees e ON erp.employee_id = e.id 
+        JOIN users u ON e.user_id = u.id 
+        LIMIT 10
+      `);
+      contextData = `
+### 📈 Workforce Attrition Risk Profiles
+Here is the automated AI risk classification assessment:
+
+| Employee | Risk Score | Principal Risk Factors |
+| :--- | :--- | :--- |
+${risks.map(r => `| ${r.employee_name} | ${r.risk_score}/100 | ${r.risk_factors || 'Stable'} |`).join('\n')}
+      `.trim();
+      isTable = true;
+      navigationTab = 'insights';
     }
 
     // 3. Synthesize final assistant response
@@ -779,7 +912,12 @@ ${holidays.map(h => `| ${h.name} | ${h.date} | ${h.description || 'Company Holid
         overview: '📊 Command Center Overview',
         insights: '📈 Workforce Insights',
         performance: '🎯 Performance Targets',
-        tickets: '🎫 IT Help Desk'
+        tickets: '🎫 IT Help Desk',
+        documents: '📁 Policy Documents',
+        reports: '📊 Reports & Analytics',
+        roles: '🛡️ Role Manager',
+        delegations: '📋 Temporary Delegations',
+        emailLogs: '✉️ Email Simulator'
       };
       
       assistantReply = `
