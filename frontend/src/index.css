@@ -1756,3 +1756,115 @@ html:not(.dark) .tree-node-content[style*="border-color:#2563eb"] {
 html.dark .node-name {
   color: #D4C9BE !important;
 }
+
+/* Default Landing Page / UI theme variables */
+html {
+  --lp-bg: #030712;
+  --lp-radial-bg: radial-gradient(circle at 50% 120%, #0F172A, #020617);
+  --lp-text-primary: #ffffff;
+  --lp-text-secondary: #9ca3af;
+  --lp-accent: #6366F1;
+  --lp-accent-hover: #4F46E5;
+  --lp-accent-gradient: linear-gradient(135deg, #6366F1, #4f46e5);
+  --lp-accent-gradient-text: linear-gradient(90deg, #6366F1, #A78BFA);
+  --lp-badge-bg: rgba(99, 102, 241, 0.06);
+  --lp-badge-border: rgba(99, 102, 241, 0.15);
+  --lp-badge-text: #818cf8;
+  --lp-btn-secondary-bg: rgba(255, 255, 255, 0.03);
+  --lp-btn-secondary-border: rgba(255, 255, 255, 0.08);
+  --lp-btn-secondary-text: #9ca3af;
+  --lp-btn-secondary-hover-bg: rgba(255, 255, 255, 0.07);
+  --lp-btn-secondary-hover-text: #ffffff;
+  --lp-header-bg: rgba(3, 7, 18, 0.6);
+  --lp-border: rgba(255, 255, 255, 0.05);
+  --lp-card-bg: rgba(255, 255, 255, 0.02);
+  --lp-card-border: rgba(255, 255, 255, 0.04);
+  --lp-section-bg: rgba(3, 7, 18, 0.4);
+  --lp-orb-opacity: 0.04;
+  --lp-console-bg: #010409;
+  --lp-console-border: rgba(255, 255, 255, 0.15);
+  --lp-console-header: #161b22;
+  --lp-dot-opacity: 0.65;
+  --lp-btn-shadow: rgba(99, 102, 241, 0.35);
+  --lp-btn-shadow-hover: rgba(99, 102, 241, 0.45);
+}
+
+html[data-theme='light'] {
+  --lp-bg: #FAFAFC;
+  --lp-radial-bg: radial-gradient(circle at 50% 120%, #f1f5f9, #FAFAFC);
+  --lp-text-primary: #111114;
+  --lp-text-secondary: #4b5563;
+  --lp-accent: #4F46E5;
+  --lp-accent-hover: #4338ca;
+  --lp-accent-gradient: linear-gradient(135deg, #4F46E5, #6366F1);
+  --lp-accent-gradient-text: linear-gradient(90deg, #4F46E5, #8B5CF6);
+  --lp-badge-bg: #e0e7ff;
+  --lp-badge-border: rgba(79, 70, 229, 0.3);
+  --lp-badge-text: #4F46E5;
+  --lp-btn-secondary-bg: #ffffff;
+  --lp-btn-secondary-border: #cbd5e1;
+  --lp-btn-secondary-text: #4b5563;
+  --lp-btn-secondary-hover-bg: #f8fafc;
+  --lp-btn-secondary-hover-text: #111114;
+  --lp-header-bg: rgba(250, 250, 252, 0.8);
+  --lp-border: rgba(17, 17, 20, 0.1);
+  --lp-card-bg: #ffffff;
+  --lp-card-border: rgba(17, 17, 20, 0.08);
+  --lp-section-bg: rgba(241, 245, 249, 0.5);
+  --lp-orb-opacity: 0.02;
+  --lp-console-bg: #f8fafc;
+  --lp-console-border: #cbd5e1;
+  --lp-console-header: #e2e8f0;
+  --lp-dot-opacity: 0.25;
+  --lp-btn-shadow: rgba(79, 70, 229, 0.15);
+  --lp-btn-shadow-hover: rgba(79, 70, 229, 0.25);
+}
+
+html[data-theme='dark'] {
+  --lp-bg: #030712;
+  --lp-radial-bg: radial-gradient(circle at 50% 120%, #0F172A, #020617);
+  --lp-text-primary: #ffffff;
+  --lp-text-secondary: #9ca3af;
+  --lp-accent: #6366F1;
+  --lp-accent-hover: #4F46E5;
+  --lp-accent-gradient: linear-gradient(135deg, #6366F1, #4f46e5);
+  --lp-accent-gradient-text: linear-gradient(90deg, #6366F1, #A78BFA);
+  --lp-badge-bg: rgba(99, 102, 241, 0.06);
+  --lp-badge-border: rgba(99, 102, 241, 0.15);
+  --lp-badge-text: #818cf8;
+  --lp-btn-secondary-bg: rgba(255, 255, 255, 0.03);
+  --lp-btn-secondary-border: rgba(255, 255, 255, 0.08);
+  --lp-btn-secondary-text: #9ca3af;
+  --lp-btn-secondary-hover-bg: rgba(255, 255, 255, 0.07);
+  --lp-btn-secondary-hover-text: #ffffff;
+  --lp-header-bg: rgba(3, 7, 18, 0.6);
+  --lp-border: rgba(255, 255, 255, 0.05);
+  --lp-card-bg: rgba(255, 255, 255, 0.02);
+  --lp-card-border: rgba(255, 255, 255, 0.04);
+  --lp-section-bg: rgba(3, 7, 18, 0.4);
+  --lp-orb-opacity: 0.04;
+  --lp-console-bg: #010409;
+  --lp-console-border: rgba(255, 255, 255, 0.15);
+  --lp-console-header: #161b22;
+  --lp-dot-opacity: 0.65;
+  --lp-btn-shadow: rgba(99, 102, 241, 0.35);
+  --lp-btn-shadow-hover: rgba(99, 102, 241, 0.45);
+}
+
+/* Access button arrow hover animation */
+.access-btn .arrow-icon {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+}
+
+.access-btn:hover .arrow-icon {
+  transform: translateX(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .access-btn .arrow-icon,
+  .access-btn:hover .arrow-icon {
+    transform: none !important;
+    transition: none !important;
+  }
+}

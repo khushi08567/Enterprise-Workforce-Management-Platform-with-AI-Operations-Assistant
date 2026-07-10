@@ -8,13 +8,23 @@ const LandingPage = ({ onEnter }) => {
   const consoleRef = useRef(null);
   const [logs, setLogs] = useState([]);
 
-  const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored) {
+      return stored === 'dark';
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   useEffect(() => {
     if (isDarkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
+      document.documentElement.setAttribute('data-theme', 'light');
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -169,7 +179,9 @@ const LandingPage = ({ onEnter }) => {
         const relativeAngle = Math.atan2(baseY - currentCenterRef.current.y, baseX - currentCenterRef.current.x);
         const shiftedAngle = (relativeAngle + Math.PI * 0.85) % (Math.PI * 2);
         const hue = (shiftedAngle / (Math.PI * 2)) * 360;
-        const colorStr = `hsla(${hue}, 85%, 65%, ${p.alpha})`;
+        const isThemeLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const opacityMultiplier = isThemeLight ? 0.45 : 1.0;
+        const colorStr = `hsla(${hue}, 85%, 65%, ${p.alpha * opacityMultiplier})`;
 
         // Draw the dash segment
         const halfLen = p.length;
@@ -257,9 +269,9 @@ const LandingPage = ({ onEnter }) => {
       style={{
         width: '100%',
         minHeight: '100vh',
-        backgroundColor: '#030712',
-        backgroundImage: 'radial-gradient(circle at 50% 120%, #0F172A, #020617)',
-        color: '#f9fafb',
+        backgroundColor: 'var(--lp-bg)',
+        backgroundImage: 'var(--lp-radial-bg)',
+        color: 'var(--lp-text-primary)',
         fontFamily: 'var(--font-body)',
         display: 'flex',
         flexDirection: 'column',
@@ -283,8 +295,8 @@ const LandingPage = ({ onEnter }) => {
       />
 
       {/* Decorative Orbs */}
-      <div style={{ position: 'absolute', top: '-10%', left: '20%', width: '45vw', height: '45vw', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.04)', filter: 'blur(120px)', pointerEvents: 'none', zIndex: 0 }} />
-      <div style={{ position: 'absolute', top: '40%', right: '-10%', width: '35vw', height: '35vw', borderRadius: '50%', background: 'rgba(168, 85, 247, 0.03)', filter: 'blur(140px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', top: '-10%', left: '20%', width: '45vw', height: '45vw', borderRadius: '50%', background: 'rgba(99, 102, 241, var(--lp-orb-opacity))', filter: 'blur(120px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', top: '40%', right: '-10%', width: '35vw', height: '35vw', borderRadius: '50%', background: 'rgba(168, 85, 247, var(--lp-orb-opacity))', filter: 'blur(140px)', pointerEvents: 'none', zIndex: 0 }} />
 
       {/* Header bar */}
       <header style={{
@@ -293,9 +305,9 @@ const LandingPage = ({ onEnter }) => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid var(--lp-border)',
         zIndex: 10,
-        background: 'rgba(3, 7, 18, 0.6)',
+        background: 'var(--lp-header-bg)',
         backdropFilter: 'blur(8px)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -303,12 +315,12 @@ const LandingPage = ({ onEnter }) => {
             width: '34px',
             height: '34px',
             borderRadius: '10px',
-            backgroundColor: '#6366F1',
-            backgroundImage: 'linear-gradient(135deg, #6366F1, #818CF8)',
+            backgroundColor: 'var(--lp-accent)',
+            backgroundImage: 'var(--lp-accent-gradient)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+            boxShadow: '0 0 20px var(--lp-btn-shadow)'
           }}>
             <Cpu size={18} color="white" />
           </div>
@@ -317,7 +329,7 @@ const LandingPage = ({ onEnter }) => {
             fontSize: '19px',
             fontWeight: '800',
             letterSpacing: '1.5px',
-            background: 'linear-gradient(to right, #ffffff, #94a3b8)',
+            background: 'linear-gradient(to right, var(--lp-text-primary), var(--lp-text-secondary))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
@@ -330,23 +342,24 @@ const LandingPage = ({ onEnter }) => {
             style={{
               padding: '9px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#f3f4f6',
+              backgroundColor: 'var(--lp-btn-secondary-bg)',
+              border: '1px solid var(--lp-btn-secondary-border)',
+              color: 'var(--lp-text-primary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               width: '36px',
-              height: '36px'
+              height: '36px',
+              outline: 'none'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.backgroundColor = 'var(--lp-btn-secondary-hover-bg)';
               e.currentTarget.style.transform = 'translateY(-1.5px)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.backgroundColor = 'var(--lp-btn-secondary-bg)';
               e.currentTarget.style.transform = 'none';
             }}
             title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -359,23 +372,26 @@ const LandingPage = ({ onEnter }) => {
             style={{
               padding: '9px 24px',
               borderRadius: '99px',
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#f3f4f6',
+              backgroundColor: 'var(--lp-btn-secondary-bg)',
+              border: '1px solid var(--lp-btn-secondary-border)',
+              color: 'var(--lp-btn-secondary-text)',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              fontSize: '13px'
+              fontSize: '13px',
+              outline: 'none'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#6366F1';
-              e.currentTarget.style.borderColor = '#6366F1';
+              e.currentTarget.style.backgroundColor = 'var(--lp-accent)';
+              e.currentTarget.style.borderColor = 'var(--lp-accent)';
+              e.currentTarget.style.color = '#ffffff';
               e.currentTarget.style.transform = 'translateY(-1.5px)';
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(99,102,241,0.3)';
+              e.currentTarget.style.boxShadow = '0 4px 15px var(--lp-btn-shadow)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.backgroundColor = 'var(--lp-btn-secondary-bg)';
+              e.currentTarget.style.borderColor = 'var(--lp-btn-secondary-border)';
+              e.currentTarget.style.color = 'var(--lp-btn-secondary-text)';
               e.currentTarget.style.transform = 'none';
               e.currentTarget.style.boxShadow = 'none';
             }}
@@ -410,11 +426,11 @@ const LandingPage = ({ onEnter }) => {
             gap: '8px',
             padding: '8px 16px',
             borderRadius: '99px',
-            backgroundColor: 'rgba(99, 102, 241, 0.06)',
-            border: '1px solid rgba(99, 102, 241, 0.15)',
+            backgroundColor: 'var(--lp-badge-bg)',
+            border: '1px solid var(--lp-badge-border)',
             fontSize: '11px',
             fontWeight: '600',
-            color: '#818CF8',
+            color: 'var(--lp-badge-text)',
             marginBottom: '32px',
             textTransform: 'uppercase',
             letterSpacing: '1.5px',
@@ -431,7 +447,7 @@ const LandingPage = ({ onEnter }) => {
             fontWeight: '900',
             lineHeight: '1.05',
             letterSpacing: '-2px',
-            color: '#ffffff',
+            color: 'var(--lp-text-primary)',
             marginBottom: '16px',
             minHeight: '80px'
           }}>
@@ -440,7 +456,7 @@ const LandingPage = ({ onEnter }) => {
               display: 'inline-block',
               width: '4px',
               height: '50px',
-              backgroundColor: '#6366F1',
+              backgroundColor: 'var(--lp-accent)',
               marginLeft: '6px',
               animation: 'blink 0.9s infinite'
             }} />
@@ -454,11 +470,11 @@ const LandingPage = ({ onEnter }) => {
             lineHeight: '1.2',
             letterSpacing: '-0.75px',
             marginBottom: '24px',
-            color: '#ffffff'
+            color: 'var(--lp-text-primary)'
           }}>
             The Future of{' '}
             <span style={{
-              backgroundImage: 'linear-gradient(90deg, #6366F1, #A78BFA)',
+              backgroundImage: 'var(--lp-accent-gradient-text)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
@@ -469,7 +485,7 @@ const LandingPage = ({ onEnter }) => {
           {/* Description */}
           <p style={{
             fontSize: '17px',
-            color: '#9ca3af',
+            color: 'var(--lp-text-secondary)',
             lineHeight: '1.65',
             maxWidth: '650px',
             margin: '0 auto 40px auto'
@@ -481,57 +497,64 @@ const LandingPage = ({ onEnter }) => {
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => onEnter('personaSelect')}
+              className="access-btn"
               style={{
                 padding: '14px 32px',
                 borderRadius: '99px',
-                backgroundColor: '#6366F1',
-                backgroundImage: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+                backgroundColor: 'var(--lp-accent)',
+                backgroundImage: 'var(--lp-accent-gradient)',
                 border: 'none',
                 color: '#ffffff',
                 fontWeight: '600',
                 cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(99, 102, 241, 0.35)',
+                boxShadow: '0 4px 20px var(--lp-btn-shadow)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                fontSize: '14px'
+                fontSize: '14px',
+                outline: 'none'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 24px rgba(99, 102, 241, 0.45)';
+                e.currentTarget.style.boxShadow = '0 6px 24px var(--lp-btn-shadow-hover)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'none';
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(99, 102, 241, 0.35)';
+                e.currentTarget.style.boxShadow = '0 4px 20px var(--lp-btn-shadow)';
               }}
             >
-              Initialize Access Sequence <ArrowRight size={16} />
+              Initialize Access Sequence{' '}
+              <span className="arrow-icon-wrapper" style={{ display: 'inline-flex', alignItems: 'center', width: '16px', overflow: 'hidden' }}>
+                <ArrowRight size={16} className="arrow-icon" />
+              </span>
             </button>
             <button
               onClick={handleScrollToConsole}
               style={{
                 padding: '14px 32px',
                 borderRadius: '99px',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: '#9ca3af',
+                backgroundColor: 'var(--lp-btn-secondary-bg)',
+                border: '1px solid var(--lp-btn-secondary-border)',
+                color: 'var(--lp-btn-secondary-text)',
                 fontWeight: '600',
                 cursor: 'pointer',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 fontSize: '14px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                outline: 'none',
+                boxShadow: 'var(--shadow-sm)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.07)';
-                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.backgroundColor = 'var(--lp-btn-secondary-hover-bg)';
+                e.currentTarget.style.color = 'var(--lp-btn-secondary-hover-text)';
                 e.currentTarget.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                e.currentTarget.style.color = '#9ca3af';
+                e.currentTarget.style.backgroundColor = 'var(--lp-btn-secondary-bg)';
+                e.currentTarget.style.color = 'var(--lp-btn-secondary-text)';
                 e.currentTarget.style.transform = 'none';
               }}
             >
@@ -542,14 +565,14 @@ const LandingPage = ({ onEnter }) => {
       </section>
 
       {/* About Section */}
-      <section style={{ padding: '100px 40px', background: 'rgba(3, 7, 18, 0.4)', zIndex: 10, borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+      <section style={{ padding: '100px 40px', background: 'var(--lp-section-bg)', zIndex: 10, borderTop: '1px solid var(--lp-border)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6366F1', textTransform: 'uppercase', letterSpacing: '2px' }}>OS OVERVIEW</span>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: '#ffffff' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--lp-accent)', textTransform: 'uppercase', letterSpacing: '2px' }}>OS OVERVIEW</span>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: 'var(--lp-text-primary)' }}>
               Consolidated Workforce Operating System
             </h3>
-            <p style={{ color: '#9ca3af', fontSize: '15px', maxWidth: '600px', margin: '12px auto 0 auto', lineHeight: '1.6' }}>
+            <p style={{ color: 'var(--lp-text-secondary)', fontSize: '15px', maxWidth: '600px', margin: '12px auto 0 auto', lineHeight: '1.6' }}>
               Syncra bypasses fragmented systems by unifying directory tracking, analytical accounting, leaves, and AI automation within a single operational kernel.
             </p>
           </div>
@@ -723,17 +746,17 @@ const LandingPage = ({ onEnter }) => {
         style={{ 
           padding: '100px 40px', 
           zIndex: 10, 
-          borderTop: '1px solid rgba(255,255,255,0.03)',
-          background: 'radial-gradient(circle at 50% 50%, #0c101a, #030712)' 
+          borderTop: '1px solid var(--lp-border)',
+          background: 'var(--lp-radial-bg)'
         }}
       >
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6366F1', textTransform: 'uppercase', letterSpacing: '2px' }}>OS CORE DIAGNOSTIC</span>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: '#ffffff' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--lp-accent)', textTransform: 'uppercase', letterSpacing: '2px' }}>OS CORE DIAGNOSTIC</span>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', marginTop: '10px', color: 'var(--lp-text-primary)' }}>
               Workforce Operations Kernel Console
             </h3>
-            <p style={{ color: '#9ca3af', fontSize: '15px', marginTop: '10px' }}>
+            <p style={{ color: 'var(--lp-text-secondary)', fontSize: '15px', marginTop: '10px' }}>
               Watch the operational sub-systems validate, mount, and interface with the AI operations assistant.
             </p>
           </div>
@@ -743,21 +766,21 @@ const LandingPage = ({ onEnter }) => {
             style={{ 
               width: '100%', 
               height: '350px', 
-              background: '#010409', 
-              border: '1px solid rgba(99, 102, 241, 0.25)', 
+              background: 'var(--lp-console-bg)', 
+              border: '1px solid var(--lp-console-border)', 
               borderRadius: '12px', 
               padding: '24px', 
               fontFamily: 'monospace', 
               fontSize: '13px', 
               color: '#39ff14', 
               overflowY: 'auto',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
               display: 'flex',
               flexDirection: 'column',
               gap: '6px'
             }}
           >
-            <div style={{ color: '#888', borderBottom: '1px solid #222', paddingBottom: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ color: 'var(--lp-text-secondary)', borderBottom: '1px solid var(--lp-console-border)', paddingBottom: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
               <span>SYSTEM DIAGNOSTIC RUNTIME - SECURE SHIELD ACTIVE</span>
               <span>PORT: 5000</span>
             </div>
@@ -769,7 +792,7 @@ const LandingPage = ({ onEnter }) => {
             ))}
 
             {logs.length < logTemplates.length && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--lp-text-primary)' }}>
                 <span className="animate-pulse" style={{ display: 'inline-block', width: '8px', height: '14px', backgroundColor: '#39ff14' }} />
                 <span>compiling kernel telemetry...</span>
               </div>
