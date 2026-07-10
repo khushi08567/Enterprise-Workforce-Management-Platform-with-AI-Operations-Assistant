@@ -41,6 +41,7 @@ import {
   LogOut,
   Settings
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import OrganizationsTab from './org/OrganizationsTab';
 import EmployeesTab from './emp/EmployeesTab';
@@ -165,7 +166,7 @@ const roleHierarchyData = {
 };
 
 const Dashboard = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'organizations', 'invites', 'roles', 'delegations', 'emailLogs'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'organizations', 'roles', 'delegations', 'emailLogs'
   const [rolesSubTab, setRolesSubTab] = useState('directory');
   const [organizations, setOrganizations] = useState([]);
   const [invites, setInvites] = useState([]);
@@ -173,6 +174,57 @@ const Dashboard = ({ user, onLogout }) => {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  // Collapsible sidebar sections state
+  const [expandedSections, setExpandedSections] = useState(() => {
+    const core = localStorage.getItem('sidebar_section_core_expanded');
+    const admin = localStorage.getItem('sidebar_section_admin_expanded');
+    return {
+      core: core !== null ? core === 'true' : true,
+      admin: admin !== null ? admin === 'true' : false
+    };
+  });
+
+  const toggleSection = (sectionId) => {
+    setExpandedSections(prev => {
+      const nextVal = !prev[sectionId];
+      localStorage.setItem(`sidebar_section_${sectionId}_expanded`, String(nextVal));
+      return { ...prev, [sectionId]: nextVal };
+    });
+  };
+
+  const sidebarSections = [
+    {
+      id: 'core',
+      label: 'Core',
+      items: [
+        { id: 'organizations', label: 'Organization Management', icon: Building2 },
+        { id: 'employees', label: 'Employees Directory', icon: Users },
+        { id: 'recruitment', label: 'Recruitment Board', icon: Briefcase },
+        { id: 'attendance', label: 'Attendance Clock', icon: Clock },
+        { id: 'leave', label: 'Leave Management', icon: Calendar },
+        { id: 'payroll', label: 'Payroll Remuneration', icon: DollarSign },
+        { id: 'performance', label: 'Performance Targets', icon: Award },
+        { id: 'projects', label: 'Project Tasks', icon: Folder },
+        { id: 'assets', label: 'Asset Inventory', icon: Monitor },
+        { id: 'tickets', label: 'Help Desk Tickets', icon: MessageSquare },
+        { id: 'documents', label: 'Policy Documents', icon: FileText },
+        { id: 'reports', label: 'Reports & Analytics', icon: BarChart }
+      ]
+    },
+    {
+      id: 'admin',
+      label: 'Admin / Compliance',
+      items: [
+        { id: 'roles', label: 'Role Manager', icon: Shield, requiredRoles: ['Super Admin'], requiredPermissions: ['role:manage'] },
+        { id: 'delegations', label: 'Temporary Delegations', icon: ClipboardList },
+        { id: 'auditLogs', label: 'Audit Log Compliance', icon: Shield, requiredRoles: ['Super Admin', 'Organization Admin', 'Auditor'] },
+        { id: 'insights', label: 'Workforce Insights', icon: TrendingUp, disabled: true },
+        { id: 'emailLogs', label: 'Email Simulator', icon: Mail, requiredRoles: ['Super Admin', 'Organization Admin'] }
+      ]
+    }
+  ];
 
   // Day 3 & Day 4 Feature States
   const [delegations, setDelegations] = useState([]);
@@ -1104,7 +1156,7 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
 
           {/* Nav list */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flexGrow: 1, paddingRight: '4px' }}>
             <button
               onClick={() => { setActiveTab('overview'); setMessage(null); }}
               style={{
@@ -1120,575 +1172,158 @@ const Dashboard = ({ user, onLogout }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                fontSize: '14px',
+                fontSize: '14.5px',
                 transition: 'all 0.15s'
               }}
             >
               <LayoutDashboard size={20} strokeWidth={1.75} /> My Dashboard
             </button>
 
-            <button
-              onClick={() => { setActiveTab('organizations'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'organizations' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'organizations' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'organizations' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Building2 size={20} strokeWidth={1.75} /> Organization Management
-            </button>
+            {sidebarSections.map(sec => {
+              // 1. Filter section items against role/permissions
+              const visibleItems = sec.items.filter(item => {
+                if (item.requiredRoles) {
+                  if (!item.requiredRoles.includes(user.role)) return false;
+                }
+                if (item.requiredPermissions) {
+                  if (user.role !== 'Super Admin' && !item.requiredPermissions.some(p => user.permissions?.includes(p))) {
+                    return false;
+                  }
+                }
+                return true;
+              });
 
-            <button
-              onClick={() => { setActiveTab('employees'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'employees' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'employees' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'employees' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Users size={20} strokeWidth={1.75} /> Employees Directory
-            </button>
+              // 2. Hide section if no items are visible
+              if (visibleItems.length === 0) return null;
 
-            <button
-              onClick={() => { setActiveTab('insights'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'insights' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'insights' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'insights' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <TrendingUp size={20} strokeWidth={1.75} /> Workforce Insights
-            </button>
+              const isExpanded = expandedSections[sec.id];
 
-            {(user.role === 'Admin' || user.role === 'Super Admin') && (
-              <button
-                onClick={() => { setActiveTab('auditLogs'); setMessage(null); }}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: activeTab === 'auditLogs' ? '#eff6ff' : 'transparent',
-                  color: activeTab === 'auditLogs' ? '#2563eb' : '#64748b',
-                  fontWeight: activeTab === 'auditLogs' ? '600' : '500',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '14px',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <Shield size={20} strokeWidth={1.75} /> Audit Log Compliance
-              </button>
-            )}
+              return (
+                <div key={sec.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {/* Collapsible Section Header */}
+                  <button
+                    role="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={`sidebar-list-${sec.id}`}
+                    onClick={() => toggleSection(sec.id)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#475569',
+                      fontWeight: '600',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.75px',
+                      transition: 'all 0.15s',
+                      outline: 'none',
+                      userSelect: 'none'
+                    }}
+                    onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px #3b82f6'}
+                    onBlur={(e) => e.target.style.boxShadow = 'none'}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        toggleSection(sec.id);
+                      }
+                    }}
+                  >
+                    <span>{sec.label}</span>
+                    <ChevronDown 
+                      size={14} 
+                      style={{ 
+                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', 
+                        transition: 'transform 0.2s ease',
+                        color: '#64748b' 
+                      }} 
+                    />
+                  </button>
 
-            <button
-              onClick={() => { setActiveTab('recruitment'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'recruitment' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'recruitment' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'recruitment' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Briefcase size={20} strokeWidth={1.75} /> Recruitment Board
-            </button>
+                  {/* Collapsible Section Items list via Framer Motion */}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        id={`sidebar-list-${sec.id}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '4px' }}
+                      >
+                        {visibleItems.map(item => {
+                          const Icon = item.icon;
+                          const isActive = activeTab === item.id;
 
-            <button
-              onClick={() => { setActiveTab('attendance'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'attendance' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'attendance' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'attendance' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Clock size={20} strokeWidth={1.75} /> Attendance Clock
-            </button>
+                          if (item.disabled) {
+                            return (
+                              <div
+                                key={item.id}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px 16px',
+                                  borderRadius: '8px',
+                                  color: '#cbd5e1',
+                                  fontWeight: '500',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: '12px',
+                                  fontSize: '14.5px',
+                                  cursor: 'not-allowed',
+                                  userSelect: 'none'
+                                }}
+                              >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <Icon size={18} strokeWidth={1.75} style={{ color: '#cbd5e1' }} />
+                                  {item.label}
+                                </span>
+                                <span style={{ fontSize: '9px', background: '#f1f5f9', color: '#94a3b8', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                                  soon
+                                </span>
+                              </div>
+                            );
+                          }
 
-            <button
-              onClick={() => { setActiveTab('leave'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'leave' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'leave' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'leave' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Calendar size={20} strokeWidth={1.75} /> Leave Management
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('payroll'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'payroll' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'payroll' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'payroll' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <DollarSign size={20} strokeWidth={1.75} /> Payroll Remuneration
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('performance'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'performance' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'performance' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'performance' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Award size={20} strokeWidth={1.75} /> Performance Targets
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('projects'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'projects' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'projects' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'projects' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Folder size={20} strokeWidth={1.75} /> Project Tasks
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('assets'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'assets' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'assets' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'assets' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Monitor size={20} strokeWidth={1.75} /> Asset Inventory
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('tickets'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'tickets' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'tickets' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'tickets' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <MessageSquare size={20} strokeWidth={1.75} /> Help Desk Tickets
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('documents'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'documents' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'documents' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'documents' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <FileText size={20} strokeWidth={1.75} /> Policy Documents
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('reports'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'reports' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'reports' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'reports' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <BarChart size={20} strokeWidth={1.75} /> Reports & Analytics
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('agents'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'agents' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'agents' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'agents' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Bot size={20} strokeWidth={1.75} /> Agent Queue
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('skills'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'skills' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'skills' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'skills' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Brain size={20} strokeWidth={1.75} /> Skills Marketplace
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('simulator'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'simulator' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'simulator' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'simulator' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <BarChart size={20} strokeWidth={1.75} /> Workforce Simulator
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('hybrid'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'hybrid' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'hybrid' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'hybrid' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Home size={20} strokeWidth={1.75} /> Hybrid Work Hub
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('gamification'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'gamification' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'gamification' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'gamification' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Gamepad2 size={20} strokeWidth={1.75} /> Gamification & Kudos
-            </button>
-
-            <button
-              onClick={() => { setActiveTab('scenarioOrg'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'scenarioOrg' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'scenarioOrg' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'scenarioOrg' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Building2 size={20} strokeWidth={1.75} /> Scenario Org Planner
-            </button>
-
-            {(user.role === 'Admin' || user.role === 'Super Admin' || user.permissions?.includes('invite:generate')) && (
-              <button
-                onClick={() => { setActiveTab('invites'); setMessage(null); }}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: activeTab === 'invites' ? '#eff6ff' : 'transparent',
-                  color: activeTab === 'invites' ? '#2563eb' : '#64748b',
-                  fontWeight: activeTab === 'invites' ? '600' : '500',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '14px',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <Mail size={20} strokeWidth={1.75} /> Onboarding Invites
-              </button>
-            )}
-
-            {(user.role === 'Super Admin' || user.permissions?.includes('role:manage')) && (
-              <button
-                onClick={() => { setActiveTab('roles'); setMessage(null); }}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: activeTab === 'roles' ? '#eff6ff' : 'transparent',
-                  color: activeTab === 'roles' ? '#2563eb' : '#64748b',
-                  fontWeight: activeTab === 'roles' ? '600' : '500',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '14px',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <Shield size={20} strokeWidth={1.75} /> Role Manager
-              </button>
-            )}
-
-            <button
-              onClick={() => { setActiveTab('delegations'); setMessage(null); }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: activeTab === 'delegations' ? '#eff6ff' : 'transparent',
-                color: activeTab === 'delegations' ? '#2563eb' : '#64748b',
-                fontWeight: activeTab === 'delegations' ? '600' : '500',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <ClipboardList size={20} strokeWidth={1.75} /> Temporary Delegations
-            </button>
-
-            {(user.role === 'Admin' || user.role === 'Super Admin') && (
-              <button
-                onClick={() => { setActiveTab('emailLogs'); setMessage(null); }}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: activeTab === 'emailLogs' ? '#eff6ff' : 'transparent',
-                  color: activeTab === 'emailLogs' ? '#2563eb' : '#64748b',
-                  fontWeight: activeTab === 'emailLogs' ? '600' : '500',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '14px',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <Mail size={20} strokeWidth={1.75} /> Email Simulator
-              </button>
-            )}
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => { setActiveTab(item.id); setMessage(null); }}
+                              style={{
+                                width: '100%',
+                                padding: '10px 16px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: isActive ? '#eff6ff' : 'transparent',
+                                color: isActive ? '#2563eb' : '#64748b',
+                                fontWeight: isActive ? '600' : '500',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                fontSize: '14.5px',
+                                transition: 'all 0.15s'
+                              }}
+                            >
+                              <Icon size={18} strokeWidth={1.75} /> {item.label}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </nav>
         </div>
-
-        {/* Sidebar Footer */}
-        <button
-          onClick={onLogout}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: 'transparent',
-            color: '#ef4444',
-            fontWeight: '600',
-            textAlign: 'left',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            fontSize: '14px',
-            transition: 'all 0.15s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-        >
-          <LogOut size={20} strokeWidth={1.75} /> Logout Account
-        </button>
       </aside>
 
       {/* Right Main viewport */}
@@ -1749,20 +1384,158 @@ const Dashboard = ({ user, onLogout }) => {
                 </select>
               )}
 
-              {/* Profile badge */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                backgroundColor: 'var(--sidebar-border)',
-                fontSize: '13px',
-                fontWeight: '500',
-                color: 'var(--text-primary)'
-              }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                Welcome, {user.name} ({activeUserRole})
+              {/* Profile dropdown container */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    backgroundColor: 'var(--sidebar-border)',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    transition: 'all 0.15s'
+                  }}
+                  onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px #3b82f6'}
+                  onBlur={(e) => e.target.style.boxShadow = 'none'}
+                >
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: '#3b82f6',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '11px'
+                  }}>
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  Welcome, {user.name} ({activeUserRole})
+                  <ChevronDown size={14} style={{ transform: isProfileDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }} />
+                </button>
+
+                <AnimatePresence>
+                  {isProfileDropdownOpen && (
+                    <>
+                      {/* Backdrop for click outside */}
+                      <div 
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }}
+                      />
+                      
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.15 }}
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          right: 0,
+                          width: '240px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid var(--sidebar-border)',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                          padding: '16px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px',
+                          zIndex: 1000
+                        }}
+                      >
+                        {/* Profile Info Header */}
+                        <div>
+                          <strong style={{ display: 'block', fontSize: '14px', color: 'var(--text-dark)' }}>{user.name}</strong>
+                          <span style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-all' }}>{user.email}</span>
+                          <span style={{ 
+                            display: 'inline-block', 
+                            marginTop: '8px', 
+                            fontSize: '10px', 
+                            fontWeight: 'bold', 
+                            color: '#2563eb', 
+                            backgroundColor: '#eff6ff', 
+                            padding: '2px 8px', 
+                            borderRadius: '4px',
+                            textTransform: 'uppercase'
+                          }}>
+                            {activeUserRole}
+                          </span>
+                        </div>
+
+                        <div style={{ height: '1px', backgroundColor: 'var(--sidebar-border)' }} />
+
+                        {/* Menu options */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileDropdownOpen(false);
+                            alert(`User Profile Details:\nName: ${user.name}\nEmail: ${user.email}\nRole: ${activeUserRole}\nOrganization: ${user.organization || 'Main Corporate'}`);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            color: 'var(--text-primary)',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          👤 View Details
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileDropdownOpen(false);
+                            onLogout();
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            color: '#ef4444',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <LogOut size={14} /> Log Out
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 

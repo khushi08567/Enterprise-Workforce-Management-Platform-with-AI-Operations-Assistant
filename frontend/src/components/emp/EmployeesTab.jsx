@@ -14,13 +14,15 @@ import {
   TrendingUp, 
   Eye, 
   Calendar,
-  Lock
+  Lock,
+  Mail,
+  Copy
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:5000/api/v1';
 
 const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
-  const [subTab, setSubTab] = useState('directory'); // 'directory', 'add', 'team'
+  const [subTab, setSubTab] = useState('directory'); // 'directory', 'add', 'team', 'invites'
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
@@ -29,6 +31,12 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
   const [empDocs, setEmpDocs] = useState([]);
   const [empTimeline, setEmpTimeline] = useState([]);
   const [directReports, setDirectReports] = useState([]);
+  
+  // Invites state
+  const [invites, setInvites] = useState([]);
+  const [inviteRole, setInviteRole] = useState('Employee');
+  const [inviteOrg, setInviteOrg] = useState('');
+  const [inviteRolesList, setInviteRolesList] = useState([]);
 
   // Search & Filter & Pagination
   const [search, setSearch] = useState('');
@@ -107,6 +115,9 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
       if (resD.ok) {
         const data = await resD.json();
         setDepartments(data.organizations || []);
+        if (data.organizations && data.organizations.length > 0 && !inviteOrg) {
+          setInviteOrg(data.organizations[0].name);
+        }
       }
       const resDes = await fetch(`${API_BASE}/designations`, { headers: getHeaders() });
       if (resDes.ok) {
@@ -130,11 +141,76 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
     }
   };
 
+  const fetchInvites = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/invites`, {
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setInvites(data.invites || []);
+      }
+    } catch (err) {
+      console.error('Error fetching invites:', err);
+    }
+  };
+
+  const fetchInviteRoles = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/roles`, {
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setInviteRolesList(data.roles || []);
+      }
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+    }
+  };
+
+  const handleCreateInvite = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/invites`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          role: inviteRole,
+          organization: inviteOrg || (departments[0] ? departments[0].name : '')
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to generate invite code.');
+
+      triggerMessage('success', 'New onboarding invite code generated.');
+      fetchInvites();
+    } catch (err) {
+      triggerMessage('error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    alert(`Copied invite code: ${code}`);
+  };
+
   useEffect(() => {
     fetchEmployees();
     fetchDepartmentsAndDesignations();
     if (subTab === 'team') {
       fetchMyTeam();
+    }
+    if (subTab === 'invites') {
+      fetchInvites();
+      fetchInviteRoles();
     }
   }, [subTab, search, deptFilter, statusFilter, offset]);
 
@@ -279,13 +355,14 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
         {[
           { id: 'directory', label: 'Employee Directory', icon: Users },
           { id: 'add', label: 'Onboard New Employee', icon: UserPlus },
-          { id: 'team', label: 'My Direct Reports', icon: Briefcase }
+          { id: 'team', label: 'My Direct Reports', icon: Briefcase },
+          { id: 'invites', label: 'Onboarding Invites', icon: Mail }
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = subTab === tab.id;
 
-          // Only show onboarding to HR/Admins
-          if (tab.id === 'add' && !isHR) return null;
+          // Only show onboarding & invites to HR/Admins
+          if ((tab.id === 'add' || tab.id === 'invites') && !isHR) return null;
 
           return (
             <button
@@ -1069,6 +1146,119 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+        {/* 4. ONBOARDING INVITES VIEW */}
+        {subTab === 'invites' && isHR && (
+          <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: '1.7fr 1.3fr', gap: '32px', width: '100%' }}>
+            {/* Active Invites List Table */}
+            <div className="auth-card" style={{ maxWidth: '100%', padding: '30px' }}>
+              <h3 style={{ margin: 0, fontWeight: '700', fontSize: '18px', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail size={20} strokeWidth={1.75} /> Onboarding Invite Codes
+              </h3>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                Manage and copy active registration tokens for onboarding team members.
+              </p>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid rgba(74, 46, 42, 0.08)', textAlign: 'left' }}>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Invite Code</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Role</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Department</th>
+                      <th style={{ padding: '12px 8px', color: 'var(--text-dark)' }}>Status</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-dark)' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invites.length > 0 ? (
+                      invites.map(inv => (
+                        <tr key={inv.id} style={{ borderBottom: '1px solid rgba(74, 46, 42, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', fontFamily: 'monospace', fontWeight: 'bold' }}>{inv.code}</td>
+                          <td style={{ padding: '12px 8px' }}>{inv.role}</td>
+                          <td style={{ padding: '12px 8px' }}>{inv.organization}</td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span className={`user-badge ${inv.status === 'active' ? 'badge-employee' : 'badge-super-admin'}`} style={{ fontSize: '10px', textTransform: 'uppercase' }}>
+                              {inv.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                            {inv.status === 'active' ? (
+                              <button 
+                                className="btn-secondary" 
+                                style={{ padding: '4px 10px', fontSize: '11px', margin: 0 }}
+                                onClick={() => handleCopyCode(inv.code)}
+                              >
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <Copy size={12} strokeWidth={1.75} /> Copy
+                                </span>
+                              </button>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Redeemed</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          No invite codes generated yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Generate Code Form */}
+            <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', height: 'fit-content' }}>
+              <h3 style={{ margin: 0, fontWeight: '700', fontSize: '18px', color: '#1e293b', marginBottom: '16px' }}>
+                🎫 Generate Invite Token
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                Create a locked invite link containing preset roles and organizational units.
+              </p>
+
+              <form onSubmit={handleCreateInvite}>
+                <div className="form-group form-select-container">
+                  <select
+                    id="inviteRole"
+                    className="form-control form-select"
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    disabled={loading}
+                    required
+                  >
+                    {inviteRolesList.map(r => (
+                      <option key={r.id} value={r.name}>{r.name} (Level: {r.level})</option>
+                    ))}
+                  </select>
+                  <label htmlFor="inviteRole" className="form-label">Assign Role Privilege</label>
+                </div>
+
+                <div className="form-group form-select-container">
+                  <select
+                    id="inviteOrg"
+                    className="form-control form-select"
+                    value={inviteOrg}
+                    onChange={(e) => setInviteOrg(e.target.value)}
+                    disabled={loading}
+                    required
+                  >
+                    {departments.filter(d => d.status === 'Active').map(org => (
+                      <option key={org.id} value={org.name}>{org.name}</option>
+                    ))}
+                  </select>
+                  <label htmlFor="inviteOrg" className="form-label">Assign Department Unit</label>
+                </div>
+
+                <button type="submit" className="btn-primary" disabled={loading || departments.length === 0}>
+                  {loading ? 'Generating Code...' : 'Generate Onboarding Token'}
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
