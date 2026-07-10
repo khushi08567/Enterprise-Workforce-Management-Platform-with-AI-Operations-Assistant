@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Shield, Users, Calendar, DollarSign, Cpu, Laptop, Ticket, Terminal, ArrowRight, Bot, Mic, Sparkles, Sun, Moon } from 'lucide-react';
+import InteractiveOrb from './InteractiveOrb';
 
 const LandingPage = ({ onEnter }) => {
   const [typedText, setTypedText] = useState('');
-  const canvasRef = useRef(null);
-  const mouseRef = useRef({ x: null, y: null, active: false });
   const consoleRef = useRef(null);
   const [logs, setLogs] = useState([]);
 
@@ -27,8 +26,6 @@ const LandingPage = ({ onEnter }) => {
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
-
-  const currentCenterRef = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
 
   const logTemplates = [
     "[SYSTEM] Initializing Syncra Core Node...",
@@ -58,160 +55,6 @@ const LandingPage = ({ onEnter }) => {
       }
     }, 120);
     return () => clearInterval(interval);
-  }, []);
-
-  // 2. Interactive Canvas Particles (Google Antigravity Spiral Dashes centered on Mouse)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    
-    let animationFrameId;
-    let particles = [];
-    
-    const resizeCanvas = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    // Build concentric rings of dashes forming a localized soap bubble
-    const buildGrid = () => {
-      particles = [];
-      const ringSpacing = 20;
-      const maxRadius = 280; // Limit maximum bubble radius
-      const ringCount = Math.floor(maxRadius / ringSpacing);
-
-      for (let r = 1; r <= ringCount; r++) {
-        const radius = r * ringSpacing;
-        const circumference = 2 * Math.PI * radius;
-        const dashDensity = 26; // Reduce number of dots by increasing spacing
-        const count = Math.floor(circumference / dashDensity);
-
-        for (let i = 0; i < count; i++) {
-          const baseAngle = (i / count) * Math.PI * 2;
-          const angleOffset = baseAngle + Math.log(radius) * 0.08;
-          
-          // Quadratic opacity falloff (fades to 0 at maxRadius, leaving the border undefined)
-          const fadeRatio = 1 - (radius / maxRadius);
-          const alpha = Math.pow(fadeRatio, 1.6) * 0.65;
-
-          particles.push({
-            distance: radius,
-            angleOffset,
-            width: Math.max(1.2, 2.2 - (radius / maxRadius) * 0.8),
-            length: Math.max(2.5, 4.5 - (radius / maxRadius) * 1.5),
-            alpha
-          });
-        }
-      }
-    };
-    buildGrid();
-
-    let rotationAngle = 0;
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      let targetX = canvas.width / 2;
-      let targetY = canvas.height / 2;
-
-      if (mouseRef.current.active && mouseRef.current.x !== null) {
-        targetX = mouseRef.current.x;
-        targetY = mouseRef.current.y;
-      }
-
-      // Compute bubble center displacement for squishy drag inertia simulation
-      const dragX = targetX - currentCenterRef.current.x;
-      const dragY = targetY - currentCenterRef.current.y;
-
-      // Glide center
-      currentCenterRef.current.x += dragX * 0.08;
-      currentCenterRef.current.y += dragY * 0.08;
-
-      rotationAngle += 0.0006; // Majestic slow rotation
-
-      const maxRadius = 280;
-
-      particles.forEach(p => {
-        const orbitAngle = p.angleOffset + rotationAngle;
-        
-        // Base coordinate relative to glide center
-        let baseX = currentCenterRef.current.x + Math.cos(orbitAngle) * p.distance;
-        let baseY = currentCenterRef.current.y + Math.sin(orbitAngle) * p.distance;
-
-        // Apply dynamic squishy drag stretch (dashes stretch/lag based on speed of motion)
-        const stretch = p.distance / maxRadius;
-        baseX += dragX * stretch * 0.45;
-        baseY += dragY * stretch * 0.45;
-
-        // Base tangent direction
-        let tx = -Math.sin(orbitAngle);
-        let ty = Math.cos(orbitAngle);
-
-        // Core repulsion bubble deflection centered on actual cursor
-        if (mouseRef.current.active && mouseRef.current.x !== null) {
-          const dx = baseX - mouseRef.current.x;
-          const dy = baseY - mouseRef.current.y;
-          const mouseDist = Math.sqrt(dx * dx + dy * dy);
-
-          if (mouseDist < 250) {
-            const pushForce = ((250 - mouseDist) / 250) * 12;
-            const pushAngle = Math.atan2(dy, dx);
-            baseX += Math.cos(pushAngle) * pushForce;
-            baseY += Math.sin(pushAngle) * pushForce;
-
-            const mouseTangentX = -Math.sin(pushAngle);
-            const mouseTangentY = Math.cos(pushAngle);
-            const blend = ((250 - mouseDist) / 250) * 0.55;
-
-            const blendedX = tx * (1 - blend) + mouseTangentX * blend;
-            const blendedY = ty * (1 - blend) + mouseTangentY * blend;
-            
-            const len = Math.sqrt(blendedX * blendedX + blendedY * blendedY);
-            tx = blendedX / len;
-            ty = blendedY / len;
-          }
-        }
-
-        // Map iridescent spectrum to polar angle relative to screen center
-        const relativeAngle = Math.atan2(baseY - currentCenterRef.current.y, baseX - currentCenterRef.current.x);
-        const shiftedAngle = (relativeAngle + Math.PI * 0.85) % (Math.PI * 2);
-        const hue = (shiftedAngle / (Math.PI * 2)) * 360;
-        const isThemeLight = document.documentElement.getAttribute('data-theme') === 'light';
-        const opacityMultiplier = isThemeLight ? 0.45 : 1.0;
-        const colorStr = `hsla(${hue}, 85%, 65%, ${p.alpha * opacityMultiplier})`;
-
-        // Draw the dash segment
-        const halfLen = p.length;
-        const x1 = baseX - tx * halfLen;
-        const y1 = baseY - ty * halfLen;
-        const x2 = baseX + tx * halfLen;
-        const y2 = baseY + ty * halfLen;
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.strokeStyle = colorStr;
-        ctx.lineWidth = p.width;
-        ctx.stroke();
-      });
-
-      animationFrameId = requestAnimationFrame(animate);
-    };
-    animate();
-
-    const handleResize = () => {
-      resizeCanvas();
-      buildGrid();
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationFrameId);
-    };
   }, []);
 
   // 3. Simulated Kernel Log Stream
@@ -251,19 +94,6 @@ const LandingPage = ({ onEnter }) => {
     }
   };
 
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    mouseRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      active: true
-    };
-  };
-
-  const handleMouseLeave = () => {
-    mouseRef.current.active = false;
-  };
-
   return (
     <div 
       style={{
@@ -280,19 +110,8 @@ const LandingPage = ({ onEnter }) => {
         overflowY: 'auto'
       }}
     >
-      {/* Interactive Background Canvas */}
-      <canvas 
-        ref={canvasRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 0
-        }}
-      />
+      {/* Interactive Background Canvas (Google Antigravity inspired Orb) */}
+      <InteractiveOrb />
 
       {/* Decorative Orbs */}
       <div style={{ position: 'absolute', top: '-10%', left: '20%', width: '45vw', height: '45vw', borderRadius: '50%', background: 'rgba(99, 102, 241, var(--lp-orb-opacity))', filter: 'blur(120px)', pointerEvents: 'none', zIndex: 0 }} />
@@ -403,8 +222,6 @@ const LandingPage = ({ onEnter }) => {
 
       {/* Hero Section Container */}
       <section 
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
         style={{
           width: '100%',
           minHeight: '85vh',
