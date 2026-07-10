@@ -2,7 +2,9 @@ import sqlite3Package from 'sqlite3';
 import path from 'path';
 
 const sqlite3 = sqlite3Package.verbose();
-const dbPath = path.resolve(import.meta.dirname, '../../database.sqlite');
+const dbPath = process.env.SQLITE_DB_PATH
+  ? path.resolve(process.env.SQLITE_DB_PATH)
+  : path.resolve(import.meta.dirname, '../../database.sqlite');
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
