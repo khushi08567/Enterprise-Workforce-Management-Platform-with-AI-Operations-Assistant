@@ -3,14 +3,14 @@ import React, { useEffect, useRef, useState } from 'react';
 /**
  * InteractiveOrb
  * A self-contained, high-performance procedural 2D canvas component inspired by
- * Google Antigravity. Creates a particle-based floating orb that reacts dynamically
- * to mouse movement with spring physics.
+ * Google Antigravity. Creates a particle-based floating orb made of sparse radial
+ * streams of tiny dash-shaped elements aligned to the flow.
  */
 export default function InteractiveOrb({
-  particleCount = 3000,
+  particleCount = 1800,
   baseOrbRadius = 250,
-  interactionRadius = 180,
-  repulsionStrength = 75,
+  interactionRadius = 160,
+  repulsionStrength = 65,
   breathingSpeed = 0.0012,
   driftSpeed = 0.001,
   rotationSpeed = 0.00015,
@@ -22,19 +22,18 @@ export default function InteractiveOrb({
   const mouseRef = useRef({ x: null, y: null, active: false });
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-  // Procedural gradient color stops
+  // Procedural gradient color stops (Golden Yellow -> Orange -> Magenta -> Purple -> Indigo -> Deep Blue)
   const colorStops = [
-    { r: 255, g: 235, b: 59 },   // Yellow (Center)
-    { r: 255, g: 152, b: 0 },    // Orange
-    { r: 233, g: 30, b: 99 },    // Pink/Red
-    { r: 156, g: 39, b: 176 },   // Purple
-    { r: 63, g: 81, b: 181 },    // Indigo
-    { r: 30, g: 144, b: 255 }    // Deep Blue (Edge)
+    { r: 255, g: 215, b: 0 },   // Golden yellow (Center)
+    { r: 255, g: 135, b: 0 },   // Orange
+    { r: 233, g: 30, b: 99 },   // Magenta / Pink
+    { r: 156, g: 39, b: 176 },  // Purple
+    { r: 63, g: 81, b: 181 },   // Indigo
+    { r: 26, g: 35, b: 126 }    // Deep blue (Edge)
   ];
 
   // Helper to interpolate colors for the radial gradient feel
   const getInterpolatedColor = (d) => {
-    // Clamp d to [0, 1]
     const clampedD = Math.max(0, Math.min(1, d));
     const val = clampedD * (colorStops.length - 1);
     const idx = Math.floor(val);
@@ -85,44 +84,74 @@ export default function InteractiveOrb({
     // Initial procedural particle generation
     const initParticles = () => {
       particles = [];
-      for (let i = 0; i < particleCount; i++) {
-        // Distribute particles using radial probability distribution
-        // Center is dense, edges fade (using power function on uniform random value)
-        const angle = Math.random() * Math.PI * 2;
-        const normalizedRadius = Math.pow(Math.random(), 2.2); 
-        const distance = baseOrbRadius * normalizedRadius;
+      const numRings = 22;
+      const streamAngles = Array.from({ length: 5 }, (_, s) => (s / 5) * Math.PI * 2);
+      
+      const getAngularDistance = (a, b) => {
+        const diff = Math.abs(a - b) % (Math.PI * 2);
+        return diff > Math.PI ? Math.PI * 2 - diff : diff;
+      };
 
-        const x0 = Math.cos(angle) * distance;
-        const y0 = Math.sin(angle) * distance;
+      let generatedCount = 0;
+      
+      // Generate particles along concentric rings (leaving the center 22% radius open)
+      for (let r = 2; r < numRings; r++) {
+        const radiusPct = r / numRings;
+        const radius = baseOrbRadius * (0.22 + radiusPct * 0.78);
+        
+        // Spacing grows wider as we go outward (sparser edges)
+        const ringSpacing = 30 * (1.0 + radiusPct * 1.5);
+        const circumference = 2 * Math.PI * radius;
+        const count = Math.floor(circumference / ringSpacing);
 
-        // Depth z-factor mapping: 1.0 (closest/largest) to 0.1 (furthest/smallest)
-        const z = 0.1 + (1 - normalizedRadius) * 0.9 + (Math.random() - 0.5) * 0.1;
-        const clampedZ = Math.max(0.1, Math.min(1.0, z));
+        for (let j = 0; j < count; j++) {
+          const baseAngle = (j / count) * Math.PI * 2;
+          const angle = baseAngle + (Math.random() - 0.5) * 0.08;
 
-        // Procedural radial color mapping
-        const color = getInterpolatedColor(normalizedRadius);
+          // Filter to distribute in radial arcs (streams)
+          let inStream = false;
+          for (let s = 0; s < streamAngles.length; s++) {
+            if (getAngularDistance(angle, streamAngles[s]) < 0.38) {
+              inStream = true;
+              break;
+            }
+          }
 
-        // Precompute values to avoid allocations in animation loop
-        particles.push({
-          // Original layout offsets relative to orb center
-          x0,
-          y0,
-          radius: distance,
-          angle,
-          
-          // Current physics state
-          x: 0,
-          y: 0,
-          vx: 0,
-          vy: 0,
-          
-          // Attributes
-          z: clampedZ,
-          size: Math.max(0.5, 0.8 + clampedZ * 1.6),
-          baseOpacity: 0.15 + clampedZ * 0.7,
-          color,
-          seed: Math.random() * 1000
-        });
+          if (!inStream) continue;
+
+          const x0 = Math.cos(angle) * radius;
+          const y0 = Math.sin(angle) * radius;
+
+          // Depth z-factor mapping: 1.0 (foreground) to 0.15 (background)
+          const z = 0.15 + (1.0 - radiusPct) * 0.8 + (Math.random() - 0.5) * 0.08;
+          const clampedZ = Math.max(0.15, Math.min(1.0, z));
+
+          const color = getInterpolatedColor(radiusPct);
+          const seed = Math.random() * 1000;
+
+          particles.push({
+            x0,
+            y0,
+            radius,
+            angle,
+            
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            
+            z: clampedZ,
+            length: Math.max(1.8, 2.2 + clampedZ * 2.8),
+            thickness: 1.0,
+            baseOpacity: 0.18 + clampedZ * 0.62,
+            color,
+            seed
+          });
+
+          generatedCount++;
+          if (generatedCount >= particleCount) break;
+        }
+        if (generatedCount >= particleCount) break;
       }
     };
 
@@ -165,28 +194,29 @@ export default function InteractiveOrb({
 
       // Dynamic theme checks
       const isThemeDark = document.documentElement.classList.contains('dark');
-      const globalOpacityMultiplier = isThemeDark ? 0.9 : 0.55;
+      const globalOpacityMultiplier = isThemeDark ? 0.95 : 0.6;
 
-      for (let i = 0; i < particleCount; i++) {
+      for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        // 1. Slow rotation
+        // 1. Slow orbital movement
         const rotAngle = time * rotationSpeed * (1.3 - p.z);
-        const rotX = p.x0 * Math.cos(rotAngle) - p.y0 * Math.sin(rotAngle);
-        const rotY = p.x0 * Math.sin(rotAngle) + p.y0 * Math.cos(rotAngle);
+        const currentAngle = p.angle + rotAngle;
 
         // 2. Breathing scale oscillation
         const breathing = 1 + Math.sin(time * breathingSpeed + p.seed) * 0.035;
-        const breathX = rotX * breathing;
-        const breathY = rotY * breathing;
+        const currentRadius = p.radius * breathing;
+
+        const rotX = Math.cos(currentAngle) * currentRadius;
+        const rotY = Math.sin(currentAngle) * currentRadius;
 
         // 3. Parallax internal drift (harmonic waves based on depth z-factor)
         const driftX = Math.sin(time * driftSpeed + p.seed * 3) * 6 * p.z;
         const driftY = Math.cos(time * driftSpeed + p.seed * 5) * 6 * p.z;
 
-        // Combine base position
-        let targetX = centerX + breathX + driftX + globalFloatX;
-        let targetY = centerY + breathY + driftY + globalFloatY;
+        // Combine base target position
+        let targetX = centerX + rotX + driftX + globalFloatX;
+        let targetY = centerY + rotY + driftY + globalFloatY;
 
         // 4. Force field repulsion calculation
         if (mouseRef.current.active && mouseRef.current.x !== null) {
@@ -219,11 +249,24 @@ export default function InteractiveOrb({
         const twinkle = 0.85 + Math.sin(time * 0.08 + p.seed) * 0.15;
         const finalOpacity = Math.max(0, Math.min(1.0, p.baseOpacity * twinkle * globalOpacityMultiplier));
 
-        // Draw particle dot
+        // 7. Calculate flow direction of the dash (radial flow following circumference + seed tilt offset)
+        const flowAngle = currentAngle + Math.PI / 2 + (p.seed % 0.26 - 0.13);
+        const tx = Math.cos(flowAngle);
+        const ty = Math.sin(flowAngle);
+
+        const halfLen = p.length / 2;
+        const x1 = p.x - tx * halfLen;
+        const y1 = p.y - ty * halfLen;
+        const x2 = p.x + tx * halfLen;
+        const y2 = p.y + ty * halfLen;
+
+        // Draw dash line segment
+        ctx.strokeStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${finalOpacity})`;
+        ctx.lineWidth = p.thickness;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${finalOpacity})`;
-        ctx.fill();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
       }
 
       animationFrameId = requestAnimationFrame(render);
