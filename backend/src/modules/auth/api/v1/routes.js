@@ -15,9 +15,9 @@ const ACCESS_CODES = {
   'Super Admin': 'SUPER2026'
 };
 
-// Register user (simplified)
+// Register user
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name: reqName, role: reqRole, organization: reqOrg, accessCode } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
@@ -32,9 +32,19 @@ router.post('/register', async (req, res) => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const name = email.split('@')[0];
-    const role = 'Employee';
-    const organization = 'MC';
+    const name = reqName || email.split('@')[0];
+    const organization = reqOrg || 'MC';
+    
+    let role = 'Employee';
+    if (reqRole && ['Admin', 'Super Admin'].includes(reqRole)) {
+      if (ACCESS_CODES[reqRole] === accessCode) {
+        role = reqRole;
+      } else {
+        return res.status(403).json({ error: `Invalid access code for role ${reqRole}.` });
+      }
+    } else if (reqRole) {
+      role = reqRole;
+    }
 
     const result = await dbRun(
       'INSERT INTO users (name, email, password_hash, role, organization, status) VALUES (?, ?, ?, ?, ?, ?)',

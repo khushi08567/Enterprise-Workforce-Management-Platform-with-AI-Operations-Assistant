@@ -168,7 +168,7 @@ db.serialize(() => {
     else {
       console.log('Roles table ready.');
       // Seed default system roles if they don't exist, or if they need to be updated to the 10-role matrix
-      db.get("SELECT COUNT(*) as count FROM roles WHERE name = 'Organization Admin'", [], (checkErr, checkRow) => {
+      db.get("SELECT COUNT(*) as count FROM roles WHERE name = 'Admin'", [], (checkErr, checkRow) => {
         if (!checkErr && checkRow.count === 0) {
           console.log('Seeding full 10-role matrix...');
           db.serialize(() => {
@@ -178,6 +178,11 @@ db.serialize(() => {
               {
                 name: 'Super Admin',
                 level: 100,
+                permissions: ["*:*"]
+              },
+              {
+                name: 'Admin',
+                level: 80,
                 permissions: ["*:*"]
               },
               {
