@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Shield, Users, Calendar, DollarSign, Cpu, Laptop, Ticket, Terminal, ArrowRight, Bot, Mic, Sparkles, Sun, Moon } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 const LandingPage = ({ onEnter }) => {
   const [typedText, setTypedText] = useState('');
@@ -76,32 +77,39 @@ const LandingPage = ({ onEnter }) => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Build concentric rings of dashes forming a localized soap bubble
+    // Build concentric rings of dashes forming a Google Antigravity style orb
     const buildGrid = () => {
       particles = [];
-      const ringSpacing = 20;
-      const maxRadius = 280; // Limit maximum bubble radius
+      const ringSpacing = 16;
+      const maxRadius = Math.min(window.innerWidth, window.innerHeight) * 0.50;
       const ringCount = Math.floor(maxRadius / ringSpacing);
 
       for (let r = 1; r <= ringCount; r++) {
         const radius = r * ringSpacing;
         const circumference = 2 * Math.PI * radius;
-        const dashDensity = 26; // Reduce number of dots by increasing spacing
+        const dashDensity = 24;
         const count = Math.floor(circumference / dashDensity);
 
         for (let i = 0; i < count; i++) {
           const baseAngle = (i / count) * Math.PI * 2;
           const angleOffset = baseAngle + Math.log(radius) * 0.08;
           
-          // Quadratic opacity falloff (fades to 0 at maxRadius, leaving the border undefined)
-          const fadeRatio = 1 - (radius / maxRadius);
-          const alpha = Math.pow(fadeRatio, 1.6) * 0.65;
+          // Map radial opacity curve: low intensity in center, peak in middle, faded boundaries
+          const ratio = r / ringCount;
+          const peakAlpha = 0.75;
+          const centerAlpha = 0.22;
+          let alpha;
+          if (ratio < 0.75) {
+            alpha = centerAlpha + (ratio / 0.75) * (peakAlpha - centerAlpha);
+          } else {
+            const fadeRatio = (ratio - 0.75) / 0.25;
+            alpha = peakAlpha - fadeRatio * (peakAlpha - 0.15);
+          }
 
           particles.push({
             distance: radius,
             angleOffset,
-            width: Math.max(1.2, 2.2 - (radius / maxRadius) * 0.8),
-            length: Math.max(2.5, 4.5 - (radius / maxRadius) * 1.5),
+            radius: Math.max(1.2, 2.2 - (radius / maxRadius) * 0.8), // Center dots larger, boundary dots smaller
             alpha
           });
         }
@@ -132,14 +140,23 @@ const LandingPage = ({ onEnter }) => {
 
       rotationAngle += 0.0006; // Majestic slow rotation
 
-      const maxRadius = 280;
+      const maxRadius = Math.min(window.innerWidth, window.innerHeight) * 0.50;
 
       particles.forEach(p => {
         const orbitAngle = p.angleOffset + rotationAngle;
         
+        // Create organic shifting shape (blob) using multi-frequency wave distortion
+        const timeFactor = rotationAngle * 12; // Speed of shifting deformation
+        const wave1 = Math.sin(orbitAngle * 3 + timeFactor) * 55;
+        const wave2 = Math.cos(orbitAngle * 5 - timeFactor * 0.8) * 35;
+        const wave3 = Math.sin(orbitAngle * 2 + timeFactor * 1.4) * 20;
+        const wave4 = Math.cos(orbitAngle * 7 + timeFactor * 2.1) * 12;
+        const distortion = (wave1 + wave2 + wave3 + wave4) * (p.distance / maxRadius);
+        const dynamicDistance = p.distance + distortion;
+
         // Base coordinate relative to glide center
-        let baseX = currentCenterRef.current.x + Math.cos(orbitAngle) * p.distance;
-        let baseY = currentCenterRef.current.y + Math.sin(orbitAngle) * p.distance;
+        let baseX = currentCenterRef.current.x + Math.cos(orbitAngle) * dynamicDistance;
+        let baseY = currentCenterRef.current.y + Math.sin(orbitAngle) * dynamicDistance;
 
         // Apply dynamic squishy drag stretch (dashes stretch/lag based on speed of motion)
         const stretch = p.distance / maxRadius;
@@ -175,27 +192,40 @@ const LandingPage = ({ onEnter }) => {
           }
         }
 
-        // Map iridescent spectrum to polar angle relative to screen center
+        // Map radial gradient: Deep blue, Indigo, Purple, Magenta, Orange, Golden yellow
+        const ratio = p.distance / maxRadius;
+        let baseHue;
+        if (ratio < 0.2) {
+          // Deep Blue to Indigo (220 to 240)
+          baseHue = 220 + (ratio / 0.2) * 20;
+        } else if (ratio < 0.4) {
+          // Indigo to Purple (240 to 270)
+          baseHue = 240 + ((ratio - 0.2) / 0.2) * 30;
+        } else if (ratio < 0.6) {
+          // Purple to Magenta (270 to 310)
+          baseHue = 270 + ((ratio - 0.4) / 0.2) * 40;
+        } else if (ratio < 0.8) {
+          // Magenta to Orange (310 to 385 / which is 25)
+          baseHue = (310 + ((ratio - 0.6) / 0.2) * 75) % 360;
+        } else {
+          // Orange to Golden Yellow (25 to 45)
+          baseHue = 25 + ((ratio - 0.8) / 0.2) * 20;
+        }
+
+        // Add subtle polar angle modulation for a beautiful swirling 2D color dispersion
         const relativeAngle = Math.atan2(baseY - currentCenterRef.current.y, baseX - currentCenterRef.current.x);
-        const shiftedAngle = (relativeAngle + Math.PI * 0.85) % (Math.PI * 2);
-        const hue = (shiftedAngle / (Math.PI * 2)) * 360;
+        const hue = (baseHue + (relativeAngle / (Math.PI * 2)) * 15) % 360;
+
         const isThemeLight = document.documentElement.getAttribute('data-theme') === 'light';
-        const opacityMultiplier = isThemeLight ? 0.45 : 1.0;
-        const colorStr = `hsla(${hue}, 85%, 65%, ${p.alpha * opacityMultiplier})`;
+        const opacityMultiplier = isThemeLight ? 0.85 : 1.0;
+        const lightness = isThemeLight ? '50%' : '65%';
+        const colorStr = `hsla(${hue}, 85%, ${lightness}, ${p.alpha * opacityMultiplier})`;
 
-        // Draw the dash segment
-        const halfLen = p.length;
-        const x1 = baseX - tx * halfLen;
-        const y1 = baseY - ty * halfLen;
-        const x2 = baseX + tx * halfLen;
-        const y2 = baseY + ty * halfLen;
-
+        // Draw a circular dot
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.strokeStyle = colorStr;
-        ctx.lineWidth = p.width;
-        ctx.stroke();
+        ctx.arc(baseX, baseY, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = colorStr;
+        ctx.fill();
       });
 
       animationFrameId = requestAnimationFrame(animate);
@@ -311,19 +341,16 @@ const LandingPage = ({ onEnter }) => {
         backdropFilter: 'blur(8px)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '10px',
-            backgroundColor: 'var(--lp-accent)',
-            backgroundImage: 'var(--lp-accent-gradient)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 0 20px var(--lp-btn-shadow)'
-          }}>
-            <Cpu size={18} color="white" />
-          </div>
+          <img 
+            src={logoImg} 
+            alt="Syncra logo" 
+            style={{ 
+              width: '34px', 
+              height: '34px', 
+              objectFit: 'contain', 
+              borderRadius: '8px' 
+            }} 
+          />
           <span style={{
             fontFamily: 'var(--font-display)',
             fontSize: '19px',
@@ -333,7 +360,7 @@ const LandingPage = ({ onEnter }) => {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            WORKFORCE OS
+            SYNCRA ENTERPRISE
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -816,7 +843,7 @@ const LandingPage = ({ onEnter }) => {
           
           <div style={{ maxWidth: '300px' }}>
             <span style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '1px', color: 'var(--lp-text-primary)', display: 'block', marginBottom: '12px' }}>
-              WORKFORCE OS
+              SYNCRA ENTERPRISE
             </span>
             <p style={{ color: 'var(--lp-text-secondary)', fontSize: '13px', lineHeight: '1.6' }}>
               A secure, decentralized operational kernel for comprehensive enterprise staffing, analytics accounting, assets, and AI delegation.

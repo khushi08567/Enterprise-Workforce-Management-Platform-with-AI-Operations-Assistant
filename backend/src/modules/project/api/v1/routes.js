@@ -10,8 +10,8 @@ router.get('/', authenticateToken, async (req, res) => {
     const projects = await dbAll(`
       SELECT p.*, u.name as owner_name 
       FROM projects p
-      JOIN employees e ON p.owner_id = e.id
-      JOIN users u ON e.user_id = u.id
+      LEFT JOIN employees e ON p.owner_id = e.id
+      LEFT JOIN users u ON e.user_id = u.id
     `);
     res.status(200).json({ projects });
   } catch (err) {

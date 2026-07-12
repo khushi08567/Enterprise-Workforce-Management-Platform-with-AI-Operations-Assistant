@@ -3,7 +3,7 @@ import { Bot, Send, MessageSquare, X, Mic, Sparkles, Check, Play, AlertCircle } 
 
 const API_BASE = 'http://localhost:5000/api/v1';
 
-export default function AIAssistantWidget({ activeTab, setActiveTab }) {
+export default function AIAssistantWidget({ activeTab, setActiveTab, onSetDeptFilter }) {
   const [isOpen, setIsOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -133,6 +133,9 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
 
         if (data.navigationTab && typeof setActiveTab === 'function') {
           setActiveTab(data.navigationTab);
+          if (data.navigationTab === 'employees' && data.filterDepartment && typeof onSetDeptFilter === 'function') {
+            onSetDeptFilter(data.filterDepartment);
+          }
         }
         if (!activeConvId) {
           setActiveConvId(data.conversationId);
@@ -255,6 +258,9 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
   const formatMessageText = (text) => {
     if (!text) return '';
     let formatted = text;
+    // Strip out ### 🤖 Rachel
+    formatted = formatted.replace(/^###\s*🤖\s*Rachel\s*/i, '');
+    
     // Strip out 📊 emoji
     formatted = formatted.replace(/📊/g, '');
     
@@ -282,7 +288,7 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
         if (line.startsWith('|') && line.endsWith('|')) {
           if (!inTable) {
             inTable = true;
-            tableHtml = '<table style="width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11.5px; border: 1px solid var(--sidebar-border);">';
+            tableHtml = '<table style="width: auto; max-width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11.5px; border: 1px solid var(--sidebar-border);">';
           }
           
           if (line.includes('---') || line.includes(':---')) {
@@ -293,7 +299,7 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
           const isHeader = i === 0 || (i > 0 && paragraphs[i-1].includes('---'));
           const cellTag = isHeader ? 'th' : 'td';
           
-          tableHtml += `<tr style="border-bottom: 1px solid var(--sidebar-border); ${isHeader ? 'background: var(--card-item-bg); font-weight: bold; color: var(--text-dark);' : 'color: var(--text-dark);'}">`;
+          tableHtml += `<tr style="border-bottom: 1px solid var(--sidebar-border); ${isHeader ? 'background: var(--card-item-bg); font-weight: bold; color: var(--text-primary);' : 'color: var(--text-primary);'}">`;
           cells.forEach(cell => {
             let cellContent = cell;
             const linkMatch = cell.match(/\[(.*?)\]\((.*?)\)/);
@@ -513,7 +519,7 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
                     
                     {/* Context State prompt cards */}
                     {contextInfo ? (
-                      <div style={{ background: 'var(--sidebar-bg)', border: '1px solid rgba(99, 102, 241, 0.15)', borderRadius: '12px', padding: '16px', color: 'var(--text-dark)' }}>
+                      <div style={{ background: 'var(--sidebar-bg)', border: '1px solid rgba(99, 102, 241, 0.15)', borderRadius: '12px', padding: '16px', color: 'var(--text-primary)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 'bold', color: '#6366F1', marginBottom: '8px' }}>
                           <Sparkles size={16} />
                           {contextInfo.title}
@@ -532,7 +538,7 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
                                 background: 'var(--sidebar-bg)',
                                 border: '1px solid var(--sidebar-border)',
                                 borderRadius: '8px',
-                                color: 'var(--text-dark)',
+                                color: 'var(--text-primary)',
                                 fontSize: '11.5px',
                                 cursor: 'pointer',
                                 transition: 'background 0.2s'
@@ -554,27 +560,51 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
                   </div>
                 )}
 
-                {messages.map((m, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                      background: m.role === 'user' ? 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' : 'var(--sidebar-bg)',
-                      color: m.role === 'user' ? 'white' : 'var(--text-dark)',
-                      padding: '10px 14px',
-                      borderRadius: m.role === 'user' ? '16px 16px 0 16px' : '16px 16px 16px 0',
-                      maxWidth: m.content.includes('|') ? '100%' : '85%',
-                      width: m.content.includes('|') ? '100%' : 'auto',
-                      overflowX: m.content.includes('|') ? 'auto' : 'visible',
-                      overflowY: 'hidden',
-                      fontSize: '12.5px',
-                      lineHeight: '1.45',
-                      border: m.role === 'user' ? 'none' : '1px solid rgba(99, 102, 241, 0.15)',
-                      boxShadow: m.role === 'user' ? '0 4px 10px rgba(99,102,241,0.2)' : '0 2px 5px rgba(0,0,0,0.02)'
-                    }}
-                    dangerouslySetInnerHTML={{ __html: formatMessageText(m.content) }}
-                  />
-                ))}
+                {messages.map((m, idx) => {
+                  const hasTable = m.content.includes('|');
+                  const showSenderLabel = idx === 0 || messages[idx - 1].role !== m.role;
+                  return (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                        maxWidth: '85%',
+                        margin: '4px 0'
+                      }}
+                    >
+                      {showSenderLabel && (
+                        <span style={{ 
+                          fontSize: '10.5px', 
+                          fontWeight: 'bold', 
+                          color: 'var(--text-secondary)', 
+                          marginBottom: '3px',
+                          alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                          padding: '0 4px'
+                        }}>
+                          {m.role === 'user' ? 'You' : '🤖 Rachel'}
+                        </span>
+                      )}
+                      <div
+                        style={{
+                          background: m.role === 'user' ? 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' : 'var(--sidebar-bg)',
+                          color: m.role === 'user' ? 'white' : 'var(--text-primary)',
+                          padding: '10px 14px',
+                          borderRadius: m.role === 'user' ? '16px 16px 0 16px' : '16px 16px 16px 0',
+                          width: 'fit-content', // Keep adjusted to the length of the texts
+                          overflowX: hasTable ? 'auto' : 'visible',
+                          overflowY: 'hidden',
+                          fontSize: '12.5px',
+                          lineHeight: '1.45',
+                          border: m.role === 'user' ? 'none' : '1px solid rgba(99, 102, 241, 0.15)',
+                          boxShadow: m.role === 'user' ? '0 4px 10px rgba(99,102,241,0.2)' : '0 2px 5px rgba(0,0,0,0.02)'
+                        }}
+                        dangerouslySetInnerHTML={{ __html: formatMessageText(m.content) }}
+                      />
+                    </div>
+                  );
+                })}
 
                 {loading && (
                   <div style={{ alignSelf: 'flex-start', background: 'var(--sidebar-bg)', border: '1px solid rgba(99, 102, 241, 0.15)', padding: '10px 14px', borderRadius: '16px 16px 16px 0', fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -671,7 +701,7 @@ export default function AIAssistantWidget({ activeTab, setActiveTab }) {
                       borderRadius: '99px',
                       border: '1px solid rgba(99, 102, 241, 0.2)',
                       background: 'var(--sidebar-bg)',
-                      color: 'var(--text-dark)',
+                      color: 'var(--text-primary)',
                       fontSize: '12.5px',
                       outline: 'none'
                     }}

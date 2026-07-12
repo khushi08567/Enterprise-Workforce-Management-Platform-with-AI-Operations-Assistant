@@ -58,6 +58,7 @@ import DocumentsTab from './document/DocumentsTab';
 import NotificationsCenter from './notification/NotificationsCenter';
 import ReportsTab from './report/ReportsTab';
 import AIAssistantWidget from './ai/AIAssistantWidget';
+import logoImg from '../assets/logo.png';
 import AgentQueueTab from './agent/AgentQueueTab';
 import SkillsMarketplaceTab from './skill/SkillsMarketplaceTab';
 import WorkforceSimulatorTab from './analytics/WorkforceSimulatorTab';
@@ -237,6 +238,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   // Floating AI Assistant States
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [aiEmployeeDeptFilter, setAiEmployeeDeptFilter] = useState('');
 
   // Command Center Overview States
   const [nudges, setNudges] = useState([
@@ -1136,18 +1138,17 @@ const Dashboard = ({ user, onLogout }) => {
         <div>
           {/* Logo Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }}>
-            <div style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '6px',
-              backgroundColor: '#3b82f6',
-              backgroundImage: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Settings size={14} color="#ffffff" />
-            </div>
+            <img 
+              src={logoImg} 
+              alt="Syncra logo" 
+              style={{
+                width: '32px',
+                height: '32px',
+                objectFit: 'contain',
+                borderRadius: '6px',
+                background: 'transparent'
+              }} 
+            />
             <span style={{
               fontFamily: 'var(--font-display)',
               fontSize: '16px',
@@ -1155,7 +1156,7 @@ const Dashboard = ({ user, onLogout }) => {
               letterSpacing: '0.5px',
               color: 'var(--header-title-color)'
             }}>
-              WORKFORCE OS
+              SYNCRA ENTERPRISE
             </span>
           </div>
 
@@ -2136,6 +2137,8 @@ const Dashboard = ({ user, onLogout }) => {
           user={activeUser} 
           prefilledOnboarding={prefilledOnboarding} 
           onClearPrefill={() => setPrefilledOnboarding(null)} 
+          initialDeptFilter={aiEmployeeDeptFilter}
+          onClearDeptFilter={() => setAiEmployeeDeptFilter('')}
         />
       )}
 
@@ -3234,7 +3237,11 @@ const Dashboard = ({ user, onLogout }) => {
         )}
       </div>
 
-      <AIAssistantWidget activeTab={activeTab} setActiveTab={setActiveTab} />
+      <AIAssistantWidget 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        onSetDeptFilter={setAiEmployeeDeptFilter}
+      />
 
       </main>
     </div>
