@@ -11,7 +11,7 @@ export default function ProjectsTab({ user }) {
 
   // Forms
   const [showProjectForm, setShowProjectForm] = useState(false);
-  const [newProject, setNewProject] = useState({ name: '', description: '', startDate: '', endDate: '', members: [] });
+  const [newProject, setNewProject] = useState({ name: '', description: '', startDate: '', endDate: '', members: [], ownerId: '' });
 
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', description: '', assigneeId: '', priority: 'Medium', deadline: '' });
@@ -92,12 +92,12 @@ export default function ProjectsTab({ user }) {
       const res = await fetch(`${API_BASE}/projects`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ ...newProject, ownerId: 1 }) // System admin owner fallback
+        body: JSON.stringify(newProject)
       });
       if (res.ok) {
         setSuccessMessage('Project workspace established.');
         setShowProjectForm(false);
-        setNewProject({ name: '', description: '', startDate: '', endDate: '', members: [] });
+        setNewProject({ name: '', description: '', startDate: '', endDate: '', members: [], ownerId: '' });
         fetchProjects();
       } else {
         const data = await res.json();
@@ -5160,6 +5160,15 @@ export default function ProjectsTab({ user }) {
                 onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
                 style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '80px' }}
               />
+              <select
+                value={newProject.ownerId}
+                required
+                onChange={(e) => setNewProject({ ...newProject, ownerId: e.target.value })}
+                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              >
+                <option value="">Select Project Owner / Manager</option>
+                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+              </select>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <input
                   type="date"

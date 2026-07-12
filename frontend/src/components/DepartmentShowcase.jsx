@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Code2, Megaphone, DollarSign, Users, Briefcase, X, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import logoImg from '../assets/logo.png';
 
 const API_BASE = 'http://localhost:5000/api/v1';
 
@@ -213,19 +214,16 @@ const DepartmentShowcase = ({ onBack, onManualLogin, transitionStage }) => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
             >
-              <div style={{
-                width: '50px',
-                height: '50px',
-                borderRadius: '14px',
-                backgroundColor: '#6366F1',
-                backgroundImage: 'linear-gradient(135deg, #6366F1, #818CF8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 25px rgba(99, 102, 241, 0.4)'
-              }}>
-                <Cpu size={26} color="white" />
-              </div>
+              <img 
+                src={logoImg} 
+                alt="Syncra logo" 
+                style={{ 
+                  width: '50px', 
+                  height: '50px', 
+                  objectFit: 'contain', 
+                  borderRadius: '12px' 
+                }} 
+              />
               <span style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '28px',
@@ -235,7 +233,7 @@ const DepartmentShowcase = ({ onBack, onManualLogin, transitionStage }) => {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                WORKFORCE OS
+                SYNCRA ENTERPRISE
               </span>
             </motion.div>
           </div>
@@ -289,19 +287,16 @@ const DepartmentShowcase = ({ onBack, onManualLogin, transitionStage }) => {
               }}
               transition={{ duration: 0.4, ease: [0.65, 0, 0.35, 1] }}
             >
-              <div style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '8px',
-                backgroundColor: '#6366F1',
-                backgroundImage: 'linear-gradient(135deg, #6366F1, #818CF8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 15px rgba(99, 102, 241, 0.3)'
-              }}>
-                <Cpu size={14} color="white" />
-              </div>
+              <img 
+                src={logoImg} 
+                alt="Syncra logo" 
+                style={{ 
+                  width: '28px', 
+                  height: '28px', 
+                  objectFit: 'contain', 
+                  borderRadius: '6px' 
+                }} 
+              />
               <span style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '15px',
@@ -311,7 +306,7 @@ const DepartmentShowcase = ({ onBack, onManualLogin, transitionStage }) => {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                WORKFORCE OS
+                SYNCRA ENTERPRISE
               </span>
             </motion.div>
           )}

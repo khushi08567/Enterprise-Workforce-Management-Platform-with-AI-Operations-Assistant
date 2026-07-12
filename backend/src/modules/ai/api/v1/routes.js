@@ -644,21 +644,40 @@ ${leaves.map(l => `| ${l.employee_name} | ${l.leave_type} | ${l.start_date} to $
     } 
     else if (matchKeywords(userQuery, taskKeywords)) {
       navigationTab = 'projects';
-      // Projects (M-09)
+      
+      // Fetch actual projects
+      const projectsList = await dbAll(`
+        SELECT p.name, p.status, p.start_date, p.end_date, u.name as owner_name 
+        FROM projects p
+        LEFT JOIN employees e ON p.owner_id = e.id
+        LEFT JOIN users u ON e.user_id = u.id
+        ORDER BY p.created_at DESC
+        LIMIT 10
+      `);
+
+      // Fetch tasks
       const tasksList = await dbAll(`
         SELECT t.title, t.status, t.priority, u.name as assignee_name 
         FROM tasks t
         LEFT JOIN employees e ON t.assignee_id = e.id
         LEFT JOIN users u ON e.user_id = u.id
+        ORDER BY t.created_at DESC
         LIMIT 10
       `);
 
-      contextData = `
-### 📋 Kanban Project Tasks
+      let projectsTable = "";
+      if (projectsList.length > 0) {
+        projectsTable = `### 📁 Active Projects
+| Project Name | Status | Owner | Timeline |
+| :--- | :--- | :--- | :--- |
+${projectsList.map(p => `| ${p.name} | ${p.status} | ${p.owner_name || 'Unassigned'} | ${p.start_date || ''} to ${p.end_date || ''} |`).join('\n')}
+\n\n`;
+      }
+
+      contextData = `${projectsTable}### 📋 Recent Tasks & Assignments
 | Task Title | Assignee | Status | Priority |
 | :--- | :--- | :--- | :--- |
-${tasksList.map(t => `| ${t.title} | ${t.assignee_name || 'Unassigned'} | ${t.status} | ${t.priority} |`).join('\n')}
-      `.trim();
+${tasksList.map(t => `| ${t.title} | ${t.assignee_name || 'Unassigned'} | ${t.status} | ${t.priority} |`).join('\n')}`.trim();
       isTable = true;
     } 
     else if (matchKeywords(userQuery, assetKeywords)) {
@@ -700,53 +719,64 @@ ${tickets.map(t => `| ${t.subject} | ${t.category} | ${t.priority} | ${t.raised_
     }
     else if (matchKeywords(userQuery, employeeKeywords)) {
       navigationTab = 'employees';
-      // Check if they are asking for a count/total of employees
-      const isCountQuery = userQuery.includes('how many') || userQuery.includes('count') || userQuery.includes('total') || userQuery.includes('number of');
       
-      if (isCountQuery) {
-        const activeCount = await dbGet("SELECT COUNT(*) as count FROM employees WHERE status = 'Active'");
-        const totalCount = await dbGet("SELECT COUNT(*) as count FROM employees");
-        
-        contextData = `
-### 👤 Employee Count Summary
-Syncra Enterprise currently has **${activeCount.count}** active employees (**${totalCount.count}** total registered profiles).
-        `.trim();
-        isTable = false;
-      } else {
-        // Search for specific employee
-        const stopWords = new Set(['who', 'is', 'find', 'search', 'for', 'employee', 'employees', 'employ', 'staff', 'member', 'the', 'a', 'an', 'show', 'list', 'details', 'colleague', 'user', 'people']);
-        const queryWords = userQuery.split(/\s+/).filter(w => !stopWords.has(w) && w.length > 2);
-        
-        let employees = [];
-        if (queryWords.length > 0) {
-          const placeholders = queryWords.map(() => 'u.name LIKE ?').join(' OR ');
-          const params = queryWords.map(w => `%${w}%`);
-          employees = await dbAll(`
-            SELECT u.name, u.email, e.status, u.role, o.name as department_name 
-            FROM employees e
-            JOIN users u ON e.user_id = u.id
-            LEFT JOIN organizations o ON e.department_id = o.id
-            WHERE ${placeholders}
-            LIMIT 10
-          `, params);
-        } else {
-          employees = await dbAll(`
-            SELECT u.name, u.email, e.status, u.role, o.name as department_name 
-            FROM employees e
-            JOIN users u ON e.user_id = u.id
-            LEFT JOIN organizations o ON e.department_id = o.id
-            LIMIT 10
-          `);
+      const isNewQuery = userQuery.includes('new') || userQuery.includes('recent') || userQuery.includes('added');
+      
+      // Check if a specific department name is mentioned in the query
+      const dbDepts = await dbAll("SELECT id, name FROM organizations");
+      let matchedDept = null;
+      for (const d of dbDepts) {
+        if (userQuery.includes(d.name.toLowerCase())) {
+          matchedDept = d;
+          break;
         }
-
-        contextData = `
-### 👤 Corporate Directory Search
-| Name | Email | Department | Role | Status |
-| :--- | :--- | :--- | :--- | :--- |
-${employees.map(e => `| ${e.name} | ${e.email} | ${e.department_name || 'N/A'} | ${e.role} | ${e.status} |`).join('\n')}
-        `.trim();
-        isTable = true;
       }
+
+      let assistantReply = "";
+      if (isNewQuery) {
+        // Fetch recently added employees
+        const recentEmps = await dbAll(`
+          SELECT e.employee_id, u.name, u.email, o.name as department_name, e.joining_date 
+          FROM employees e
+          JOIN users u ON e.user_id = u.id
+          LEFT JOIN organizations o ON e.department_id = o.id
+          ORDER BY e.created_at DESC
+          LIMIT 5
+        `);
+
+        if (recentEmps.length > 0) {
+          assistantReply = `### 🤖 Rachel\n\nHere are the most recently added employees in the system:\n\n| ID | Name | Email | Department | Joining Date |\n| :--- | :--- | :--- | :--- | :--- |\n${recentEmps.map(emp => `| ${emp.employee_id} | ${emp.name} | ${emp.email} | ${emp.department_name || 'N/A'} | ${emp.joining_date} |`).join('\n')}`;
+          
+          // Save Assistant reply
+          await dbRun('INSERT INTO ai_messages (conversation_id, role, content, structured_data) VALUES (?, "assistant", ?, ?)', [
+            finalConvId, assistantReply, null
+          ]);
+
+          return res.status(200).json({ 
+            response: assistantReply, 
+            conversationId: finalConvId, 
+            navigationTab
+          });
+        }
+      }
+
+      if (matchedDept) {
+        assistantReply = `### 🤖 Rachel\n\nI am opening the **Employee Directory** and filtering for the **${matchedDept.name}** department for you right now!`;
+      } else {
+        assistantReply = `### 🤖 Rachel\n\nI am opening the **Employee Directory** for you right now!`;
+      }
+      
+      // Save Assistant reply
+      await dbRun('INSERT INTO ai_messages (conversation_id, role, content, structured_data) VALUES (?, "assistant", ?, ?)', [
+        finalConvId, assistantReply, null
+      ]);
+
+      return res.status(200).json({ 
+        response: assistantReply, 
+        conversationId: finalConvId, 
+        navigationTab,
+        filterDepartment: matchedDept ? matchedDept.name : null
+      });
     }
     else if (matchKeywords(userQuery, departmentKeywords)) {
       navigationTab = 'organizations';

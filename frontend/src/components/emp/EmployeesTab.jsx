@@ -21,7 +21,7 @@ import {
 
 const API_BASE = 'http://localhost:5000/api/v1';
 
-const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
+const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill, initialDeptFilter, onClearDeptFilter }) => {
   const [subTab, setSubTab] = useState('directory'); // 'directory', 'add', 'team', 'invites'
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -201,6 +201,20 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
     navigator.clipboard.writeText(code);
     alert(`Copied invite code: ${code}`);
   };
+
+  useEffect(() => {
+    if (initialDeptFilter && departments.length > 0) {
+      const match = departments.find(d => d.name.toLowerCase() === initialDeptFilter.toLowerCase());
+      if (match) {
+        setDeptFilter(match.id);
+        setOffset(0);
+        setSubTab('directory');
+      }
+      if (typeof onClearDeptFilter === 'function') {
+        onClearDeptFilter();
+      }
+    }
+  }, [initialDeptFilter, departments, onClearDeptFilter]);
 
   useEffect(() => {
     fetchEmployees();
@@ -469,7 +483,33 @@ const EmployeesTab = ({ user, prefilledOnboarding, onClearPrefill }) => {
                 <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
                   <th style={{ padding: '12px 8px' }}>EMP ID</th>
                   <th style={{ padding: '12px 8px' }}>Name</th>
-                  <th style={{ padding: '12px 8px' }}>Department</th>
+                  <th style={{ padding: '12px 8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span>Department</span>
+                      <select
+                        value={deptFilter}
+                        onChange={(e) => { setDeptFilter(e.target.value); setOffset(0); }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '11px',
+                          fontWeight: 'normal',
+                          backgroundColor: '#ffffff',
+                          color: '#334155',
+                          outline: 'none',
+                          maxWidth: '130px',
+                          marginTop: '2px'
+                        }}
+                      >
+                        <option value="">All Departments</option>
+                        {departments.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </th>
                   <th style={{ padding: '12px 8px' }}>Designation</th>
                   <th style={{ padding: '12px 8px' }}>Manager</th>
                   <th style={{ padding: '12px 8px' }}>Status</th>
